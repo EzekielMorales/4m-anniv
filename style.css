@@ -1,0 +1,329 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #030105;
+    color: #ffffff;
+    font-family: 'Poppins', 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#app {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(circle at center, #12031a 0%, #050109 70%, #000000 100%);
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+#matrix-canvas {
+    z-index: 1;
+}
+
+#fg-canvas {
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* =========================================
+   Start Overlay
+   ========================================= */
+.overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(3, 1, 6, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+}
+
+.overlay.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.card-glow {
+    position: relative;
+    padding: 2.8rem 3.2rem;
+    max-width: 460px;
+    width: 90%;
+    text-align: center;
+    background: rgba(22, 10, 31, 0.7);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 64, 140, 0.35);
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.7),
+        0 0 50px rgba(255, 20, 147, 0.25),
+        inset 0 0 25px rgba(255, 64, 140, 0.15);
+    animation: floatCard 4s ease-in-out infinite alternate;
+}
+
+@keyframes floatCard {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-8px); }
+}
+
+.heart-icon-pulse {
+    font-size: 3.5rem;
+    margin-bottom: 0.8rem;
+    display: inline-block;
+    filter: drop-shadow(0 0 15px rgba(255, 20, 147, 0.8));
+    animation: heartBeat 1.4s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+@keyframes heartBeat {
+    0% { transform: scale(1); }
+    14% { transform: scale(1.18); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.12); }
+    70% { transform: scale(1); }
+}
+
+.glow-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+    text-shadow: 
+        0 0 10px rgba(255, 105, 180, 0.8),
+        0 0 25px rgba(255, 20, 147, 0.6),
+        0 0 45px rgba(255, 20, 147, 0.4);
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: #e5b3d6;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.btn-glow {
+    position: relative;
+    padding: 1rem 2.5rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #ff1493, #ff4081, #d80064);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 
+        0 4px 20px rgba(255, 20, 147, 0.5),
+        0 0 30px rgba(255, 20, 147, 0.4);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.btn-glow:hover {
+    transform: scale(1.05);
+    box-shadow: 
+        0 6px 28px rgba(255, 20, 147, 0.8),
+        0 0 45px rgba(255, 64, 140, 0.6);
+}
+
+.btn-glow:active {
+    transform: scale(0.98);
+}
+
+.hint {
+    margin-top: 1.6rem;
+    font-size: 0.85rem;
+    color: #d19ec0;
+    opacity: 0.85;
+}
+
+/* =========================================
+   Floating UI Controls
+   ========================================= */
+.ui-controls {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    gap: 12px;
+    background: rgba(18, 7, 26, 0.65);
+    padding: 8px 16px;
+    border-radius: 40px;
+    border: 1px solid rgba(255, 64, 140, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    opacity: 1;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.ui-controls.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 15px);
+}
+
+.control-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 105, 180, 0.2);
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+    background: rgba(255, 20, 147, 0.4);
+    border-color: rgba(255, 64, 140, 0.6);
+    transform: scale(1.1);
+}
+
+/* =========================================
+   Customize Modal
+   ========================================= */
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-card {
+    background: #14071c;
+    border: 1px solid rgba(255, 64, 140, 0.4);
+    border-radius: 20px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 20, 147, 0.2);
+}
+
+.modal-card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #ff69b4;
+}
+
+.modal-desc {
+    font-size: 0.85rem;
+    color: #c9a4bd;
+    margin-bottom: 1.4rem;
+}
+
+.form-group {
+    margin-bottom: 1.2rem;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.88rem;
+    color: #f1cfe4;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 64, 140, 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+    border-color: #ff1493;
+    box-shadow: 0 0 10px rgba(255, 20, 147, 0.4);
+}
+
+.words-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 1.5rem;
+}
+
+.btn-primary {
+    background: #ff1493;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #ff3399;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ddd;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 600px) {
+    .card-glow {
+        padding: 2rem 1.5rem;
+    }
+    .glow-title {
+        font-size: 1.8rem;
+    }
+}

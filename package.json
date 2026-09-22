@@ -1,0 +1,12 @@
+{
+  "name": "matrix-love-code",
+  "version": "1.0.0",
+  "description": "Matrix Love Code romantic particle animation synced to music",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["matrix", "love", "heart", "canvas", "particles", "animation"],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Matrix Love Code 💖</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Background Matrix Digital Rain Layer -->
+        <canvas id="matrix-canvas"></canvas>
+
+        <!-- Foreground Particles, LED Text & Heart Layer -->
+        <canvas id="fg-canvas"></canvas>
+
+        <!-- Audio element playing the exact music from the video -->
+        <audio id="bgm" src="audio.mp4" preload="auto" playsinline></audio>
+
+        <!-- Start Screen Overlay (ensures audio plays smoothly with user gesture) -->
+        <div id="start-overlay" class="overlay">
+            <div class="card-glow">
+                <div class="heart-icon-pulse">💖</div>
+                <h1 class="glow-title">Matrix Love Code</h1>
+                <p class="subtitle">A special romantic surprise for you</p>
+                <button id="start-btn" class="btn-glow">
+                    <span>Click to Begin ✨</span>
+                </button>
+                <div class="hint">🔊 Please turn on your sound for best experience</div>
+            </div>
+        </div>
+
+        <!-- Floating Quick Controls (Auto-hides) -->
+        <div id="ui-controls" class="ui-controls hidden">
+            <button id="play-pause-btn" class="control-btn" title="Play / Pause">⏸️</button>
+            <button id="replay-btn" class="control-btn" title="Replay from start">🔄</button>
+            <button id="edit-btn" class="control-btn" title="Customize Message">✏️</button>
+            <button id="fullscreen-btn" class="control-btn" title="Fullscreen (F)">⛶</button>
+        </div>
+
+        <!-- Customize Message Modal -->
+        <div id="edit-modal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <h2>Customization Settings ⚙️</h2>
+                <p class="modal-desc">Customize the message inside the heart and the sequence words:</p>
+                
+                <div class="form-group">
+                    <label for="input-heart-text">Heart Text:</label>
+                    <input type="text" id="input-heart-text" value="I Love ❤️ You Sayang" placeholder="e.g. I Love ❤️ You Sayang">
+                </div>
+
+                <div class="form-group">
+                    <label>Sequence Words:</label>
+                    <div class="words-grid">
+                        <input type="text" id="input-word-1" value="You" placeholder="Word 1">
+                        <input type="text" id="input-word-2" value="Are" placeholder="Word 2">
+                        <input type="text" id="input-word-3" value="My" placeholder="Word 3">
+                        <input type="text" id="input-word-4" value="Love" placeholder="Word 4">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="reset-defaults-btn" class="btn-secondary">Reset Defaults</button>
+                    <button id="save-modal-btn" class="btn-primary">Save & Apply</button>
+                    <button id="close-modal-btn" class="btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
