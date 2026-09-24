@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Montserrat:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Poppins:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app">
@@ -18,7 +18,16 @@
         <canvas id="fg-canvas"></canvas>
 
         <!-- Audio element playing Best Part (Daniel Caesar ft. H.E.R.) -->
-        <audio id="bgm" src="audio.m4a" preload="auto" playsinline></audio>
+        <audio id="bgm" src="audio.mp3" preload="auto" playsinline></audio>
+
+        <!-- Interactive Proceed to Vinyl Record Button (Appears 3-5s after Heart Blooms) -->
+        <div id="heart-proceed-container" class="heart-proceed-container hidden">
+            <button id="proceed-record-btn" class="proceed-record-btn" title="ไปฟังแผ่นเสียงต่อกันนะ">
+                <span class="btn-disc-icon">💿</span>
+                <span class="btn-label">ไปฟังแผ่นเสียงต่อกันนะ ➔</span>
+                <span class="btn-sparkle">✨</span>
+            </button>
+        </div>
 
         <!-- Passcode Lock Screen (Voice Vault Style) -->
         <div id="lock-screen" class="lock-screen">
@@ -100,9 +109,107 @@
             </div>
         </div>
 
+        <!-- Vinyl Record Player Screen (Our Record) -->
+        <div id="record-screen" class="record-screen hidden">
+            <!-- Ambient Background Glow & Floating Sparkles -->
+            <div class="record-ambient-glow"></div>
+            <div class="decor-sparkle ds-1">✦</div>
+            <div class="decor-sparkle ds-2">✦</div>
+            <div class="decor-sparkle ds-4">✦</div>
+
+            <!-- Top Header -->
+            <div class="record-header">
+                <span class="record-badge">✦ A PRIVATE PRESSING ✦</span>
+                <h1 class="record-title">Best Part</h1>
+                <p class="record-artist">Daniel Caesar ft. H.E.R. · for Milk 💖</p>
+            </div>
+
+            <!-- Turntable Player Assembly -->
+            <div class="turntable-container" id="turntable-container">
+                <!-- Ambient Sound Ripples -->
+                <div class="ripple-ring r1"></div>
+                <div class="ripple-ring r2"></div>
+                <div class="ripple-ring r3"></div>
+
+                <!-- Turntable Platter Base -->
+                <div class="turntable-platter" id="turntable-platter">
+                    <!-- Spinning Vinyl Record Disc -->
+                    <div class="vinyl-disc" id="vinyl-disc">
+                        <!-- Concentric Vinyl Grooves Texture -->
+                        <div class="vinyl-grooves"></div>
+                        <!-- Glossy Specular Light Reflection -->
+                        <div class="vinyl-reflection"></div>
+                        <!-- Center Disc Label Sticker -->
+                        <div class="vinyl-center-label" id="vinyl-center-label" title="คลิกเพื่อเปลี่ยนรูปภาพได้">
+                            <img src="milk-photo.png" alt="Milk" class="vinyl-center-img" id="vinyl-img">
+                            <!-- Spindle Hole -->
+                            <div class="spindle-hole"></div>
+                        </div>
+                    </div>
+
+                    <!-- Tonearm (The Needle Arm) -->
+                    <div class="tonearm-assembly" id="tonearm">
+                        <div class="tonearm-base">
+                            <div class="tonearm-pivot"></div>
+                        </div>
+                        <div class="tonearm-lever"></div>
+                        <div class="tonearm-head">
+                            <div class="tonearm-stylus"></div>
+                        </div>
+                    </div>
+
+                    <!-- Circular Play / Pause Button on Turntable -->
+                    <button class="turntable-play-btn" id="turntable-play-btn" title="Play / Pause">
+                        <svg class="play-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                            <polygon points="7,4 20,12 7,20" />
+                        </svg>
+                        <svg class="pause-svg hidden" viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                            <rect x="6" y="4" width="4" height="16" rx="1.5" />
+                            <rect x="14" y="4" width="4" height="16" rx="1.5" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bottom Player Controls & Info -->
+            <div class="record-footer">
+                <!-- Interactive Progress Scrubber -->
+                <div class="record-progress-wrapper" id="record-progress-wrapper">
+                    <div class="record-progress-bar" id="record-progress-bar">
+                        <div class="record-progress-fill" id="record-progress-fill"></div>
+                        <div class="record-progress-thumb"></div>
+                    </div>
+                </div>
+
+                <!-- Time & Caption -->
+                <div class="record-meta">
+                    <span class="record-caption">Happy 4 Months Anniversary 💖</span>
+                    <div class="record-time">
+                        <span id="record-curr-time">00:00</span> / <span id="record-dur-time">03:29</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Actions -->
+                <div class="record-nav-actions">
+                    <button id="btn-back-matrix" class="record-nav-btn" title="กลับไปดูหัวใจพาร์ทิเคิล">
+                        <span>💖</span>
+                        <span>Matrix Heart</span>
+                    </button>
+                    <button id="btn-replay-all" class="record-nav-btn primary" title="เล่นใหม่ตั้งแต่ต้น">
+                        <span>🔄</span>
+                        <span>Replay All</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hidden photo upload for center label -->
+            <input type="file" id="input-record-cover" accept="image/*" class="hidden">
+        </div>
+
         <!-- Floating Quick Controls (Auto-hides) -->
         <div id="ui-controls" class="ui-controls hidden">
             <button id="play-pause-btn" class="control-btn" title="Play / Pause">⏸️</button>
+            <button id="switch-record-btn" class="control-btn" title="Our Record (แผ่นเสียง)">💿</button>
             <button id="replay-btn" class="control-btn" title="Replay from start">🔄</button>
             <button id="fullscreen-btn" class="control-btn" title="Fullscreen (F)">⛶</button>
         </div>
@@ -131,7 +238,7 @@
                 <div class="form-group">
                     <label for="select-song">Music Track:</label>
                     <select id="select-song" class="form-select">
-                        <option value="audio.m4a" selected>Best Part - Daniel Caesar ft. H.E.R.</option>
+                        <option value="audio.mp3" selected>Best Part - Daniel Caesar ft. H.E.R. (Full Song)</option>
                         <option value="audio.mp4">Original TikTok Video Track (Jalan-jalan...)</option>
                     </select>
                 </div>

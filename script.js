@@ -9,7 +9,8 @@
 if (!localStorage.getItem('matrix_heart_text') || localStorage.getItem('matrix_heart_text').includes('Sayang')) {
     localStorage.setItem('matrix_heart_text', 'I Love ❤️ You Milk');
 }
-localStorage.setItem('matrix_song', 'audio.m4a');
+// Upgrade to full version of Best Part (audio.mp3)
+localStorage.setItem('matrix_song', 'audio.mp3');
 
 // Default sequence of words requested by user
 const DEFAULT_WORDS = ['Happy', 'Anniversary', '4 Month', 'You', 'Are', 'My', 'Love'];
@@ -19,24 +20,24 @@ const DEFAULT_WORDS = ['Happy', 'Anniversary', '4 Month', 'You', 'Are', 'My', 'L
 // ==========================================
 const CONFIG = {
     correctPin: '2405',
-    currentSong: 'audio.m4a', // Best Part by Daniel Caesar ft. H.E.R.
+    currentSong: 'audio.mp3', // Best Part (Full Song) by Daniel Caesar ft. H.E.R.
 
     // Custom Messages
     heartText: localStorage.getItem('matrix_heart_text') || 'I Love ❤️ You Milk',
     words: DEFAULT_WORDS,
 
-    // Song Timings synchronized with Best Part
+    // Song Timings synchronized with Best Part (Verse 1 & Chorus)
     timings: {
         introStart: 0.0,
-        centerDot1Start: 1.0,
-        centerDot1End: 2.3,
-        count3Start: 2.4,
-        count2Start: 3.6,
-        count1Start: 4.8,
-        countdownEnd: 5.9,
-        wordsStart: 6.0,
-        wordsEnd: 17.55,
-        heartDropStart: 17.6 // "If life is a movie, oh you're the best part... ❤️" -> Heart
+        centerDot1Start: 0.8,
+        centerDot1End: 2.2,
+        count3Start: 2.3,
+        count2Start: 3.5,
+        count1Start: 4.7,
+        countdownEnd: 5.8,
+        wordsStart: 5.9,
+        wordsEnd: 18.5,
+        heartDropStart: 18.6 // "You're the coffee that I need in the morning..." -> Heart blooms!
     }
 };
 
@@ -83,6 +84,33 @@ const replayBtn = document.getElementById('replay-btn');
 const lockAgainBtn = document.getElementById('lock-again-btn');
 const editBtn = document.getElementById('edit-btn');
 const fullscreenBtn = document.getElementById('fullscreen-btn');
+const switchRecordBtn = document.getElementById('switch-record-btn');
+
+// Interactive Proceed Button (Heart -> Record)
+const heartProceedContainer = document.getElementById('heart-proceed-container');
+const proceedRecordBtn = document.getElementById('proceed-record-btn');
+let hasShownProceedButton = false;
+
+// Vinyl Record Screen Elements
+const recordScreen = document.getElementById('record-screen');
+const turntableContainer = document.getElementById('turntable-container');
+const turntablePlatter = document.getElementById('turntable-platter');
+const vinylDisc = document.getElementById('vinyl-disc');
+const tonearm = document.getElementById('tonearm');
+const turntablePlayBtn = document.getElementById('turntable-play-btn');
+const turntablePlaySvg = turntablePlayBtn ? turntablePlayBtn.querySelector('.play-svg') : null;
+const turntablePauseSvg = turntablePlayBtn ? turntablePlayBtn.querySelector('.pause-svg') : null;
+const recordProgressWrapper = document.getElementById('record-progress-wrapper');
+const recordProgressBar = document.getElementById('record-progress-bar');
+const recordProgressFill = document.getElementById('record-progress-fill');
+const recordProgressThumb = document.querySelector('.record-progress-thumb');
+const recordCurrTime = document.getElementById('record-curr-time');
+const recordDurTime = document.getElementById('record-dur-time');
+const btnBackMatrix = document.getElementById('btn-back-matrix');
+const btnReplayAll = document.getElementById('btn-replay-all');
+const vinylCenterLabel = document.getElementById('vinyl-center-label');
+const inputRecordCover = document.getElementById('input-record-cover');
+const vinylImg = document.getElementById('vinyl-img');
 
 // Modal Elements
 const editModal = document.getElementById('edit-modal');
@@ -102,6 +130,8 @@ let isStarted = false;
 let controlsTimeout = null;
 let currentPin = '';
 let isUnlocking = false;
+let currentView = 'matrix'; // 'matrix' or 'record'
+let hasAutoTransitionedToRecord = false;
 
 // Set audio track
 audio.src = CONFIG.currentSong;
@@ -244,8 +274,14 @@ function lockExperienceAgain() {
     audio.currentTime = 0;
     currentPin = '';
     isUnlocking = false;
+    currentView = 'matrix';
+    hasAutoTransitionedToRecord = false;
+    hasShownProceedButton = false;
+    if (heartProceedContainer) heartProceedContainer.classList.add('hidden');
     updatePinIndicators();
     lockIconBox.classList.remove('open');
+    recordScreen.classList.add('hidden');
+    updateTurntableState(false);
     lockScreen.style.display = 'flex';
     setTimeout(() => {
         lockScreen.classList.remove('unlocked');
@@ -898,6 +934,14 @@ function animate() {
     const t = audio.currentTime;
     const timings = CONFIG.timings;
 
+    // Reset proceed button if user scrubs backward before heart drop
+    if (t < timings.heartDropStart && hasShownProceedButton) {
+        hasShownProceedButton = false;
+        if (heartProceedContainer) {
+            heartProceedContainer.classList.add('hidden');
+        }
+    }
+
     if (t >= timings.introStart && t < timings.centerDot1Start) {
         // Pink matrix rain with guitar intro
     }
@@ -938,21 +982,262 @@ function animate() {
     }
     else if (t >= timings.heartDropStart) {
         updateAndDrawHeart(t);
+
+        // Interactive proceed button appears 3-5s after heart blooms
+        if (!hasShownProceedButton && t >= timings.heartDropStart + 3.8) {
+            hasShownProceedButton = true;
+            if (heartProceedContainer && currentView === 'matrix') {
+                heartProceedContainer.classList.remove('hidden');
+            }
+        }
     }
 }
 
 // ==========================================
-// 8. Experience Controls & UI
+// 8. Vinyl Record Player Logic (Our Record)
+// ==========================================
+function formatRecordTime(sec) {
+    if (isNaN(sec) || sec < 0) return '00:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+function updateTurntableState(isPlaying) {
+    if (isPlaying) {
+        if (turntableContainer) turntableContainer.classList.add('playing');
+        if (vinylDisc) vinylDisc.classList.add('playing');
+        if (tonearm) tonearm.classList.add('playing');
+        if (turntablePlaySvg) turntablePlaySvg.classList.add('hidden');
+        if (turntablePauseSvg) turntablePauseSvg.classList.remove('hidden');
+        if (playPauseBtn) playPauseBtn.textContent = '⏸️';
+    } else {
+        if (turntableContainer) turntableContainer.classList.remove('playing');
+        if (vinylDisc) vinylDisc.classList.remove('playing');
+        if (tonearm) tonearm.classList.remove('playing');
+        if (turntablePlaySvg) turntablePlaySvg.classList.remove('hidden');
+        if (turntablePauseSvg) turntablePauseSvg.classList.add('hidden');
+        if (playPauseBtn) playPauseBtn.textContent = '▶️';
+    }
+}
+
+function showRecordScreen() {
+    currentView = 'record';
+    if (recordScreen) recordScreen.classList.remove('hidden');
+    if (heartProceedContainer) heartProceedContainer.classList.add('hidden');
+    if (uiControls) uiControls.classList.add('hidden');
+    // Seamless playback continues forward without stopping
+    updateTurntableState(!audio.paused);
+    updateRecordProgress();
+}
+
+function showMatrixScreen() {
+    currentView = 'matrix';
+    if (recordScreen) recordScreen.classList.add('hidden');
+    if (uiControls) uiControls.classList.remove('hidden');
+    if (heartProceedContainer && audio.currentTime >= CONFIG.timings.heartDropStart + 3.8) {
+        heartProceedContainer.classList.remove('hidden');
+    }
+    scheduleHideControls();
+}
+
+function updateRecordProgress() {
+    if (isScrubbing) return;
+    if (!audio.duration) return;
+    const cur = audio.currentTime;
+    const dur = audio.duration;
+    const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
+
+    if (recordProgressFill) recordProgressFill.style.width = `${pct}%`;
+    if (recordProgressThumb) recordProgressThumb.style.left = `${pct}%`;
+    if (recordCurrTime) recordCurrTime.textContent = formatRecordTime(cur);
+    if (recordDurTime) recordDurTime.textContent = formatRecordTime(dur);
+}
+
+// Turntable Play/Pause
+if (turntablePlayBtn) {
+    turntablePlayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playKeyClickSound();
+        if (audio.paused) {
+            audio.play();
+            updateTurntableState(true);
+        } else {
+            audio.pause();
+            updateTurntableState(false);
+        }
+    });
+}
+
+// Clicking the vinyl disc toggles play/pause
+if (vinylDisc) {
+    vinylDisc.addEventListener('click', (e) => {
+        if (e.target.closest('#vinyl-center-label')) return;
+        playKeyClickSound();
+        if (audio.paused) {
+            audio.play();
+            updateTurntableState(true);
+        } else {
+            audio.pause();
+            updateTurntableState(false);
+        }
+    });
+}
+
+// Interactive Proceed Button (Heart -> Record)
+if (proceedRecordBtn) {
+    proceedRecordBtn.addEventListener('click', () => {
+        playKeyClickSound();
+        if (heartProceedContainer) {
+            heartProceedContainer.classList.add('hidden');
+        }
+        showRecordScreen();
+    });
+}
+
+// Progress Bar Scrubber - Smooth bidirectional Seeking (Click + Drag for Mouse & Mobile Touch)
+let isScrubbing = false;
+
+function seekAudioFromEvent(e) {
+    if (!audio.duration || !recordProgressBar) return;
+    const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+    const rect = recordProgressBar.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const targetTime = ratio * audio.duration;
+
+    const pct = ratio * 100;
+    if (recordProgressFill) recordProgressFill.style.width = `${pct}%`;
+    if (recordProgressThumb) recordProgressThumb.style.left = `${pct}%`;
+    if (recordCurrTime) recordCurrTime.textContent = formatRecordTime(targetTime);
+
+    audio.currentTime = targetTime;
+}
+
+if (recordProgressWrapper) {
+    // Mouse dragging
+    recordProgressWrapper.addEventListener('mousedown', (e) => {
+        isScrubbing = true;
+        recordProgressWrapper.classList.add('scrubbing');
+        seekAudioFromEvent(e);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (isScrubbing) {
+            seekAudioFromEvent(e);
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isScrubbing) {
+            isScrubbing = false;
+            if (recordProgressWrapper) recordProgressWrapper.classList.remove('scrubbing');
+            updateRecordProgress();
+        }
+    });
+
+    // Touch dragging on mobile
+    recordProgressWrapper.addEventListener('touchstart', (e) => {
+        isScrubbing = true;
+        recordProgressWrapper.classList.add('scrubbing');
+        seekAudioFromEvent(e);
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (isScrubbing) {
+            seekAudioFromEvent(e);
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+        if (isScrubbing) {
+            isScrubbing = false;
+            if (recordProgressWrapper) recordProgressWrapper.classList.remove('scrubbing');
+            updateRecordProgress();
+        }
+    });
+}
+
+// Navigation between Matrix and Record
+if (switchRecordBtn) {
+    switchRecordBtn.addEventListener('click', () => {
+        playKeyClickSound();
+        showRecordScreen();
+    });
+}
+
+if (btnBackMatrix) {
+    btnBackMatrix.addEventListener('click', () => {
+        playKeyClickSound();
+        showMatrixScreen();
+    });
+}
+
+function replayEntireExperience() {
+    playKeyClickSound();
+    hasAutoTransitionedToRecord = false;
+    hasShownProceedButton = false;
+    if (heartProceedContainer) heartProceedContainer.classList.add('hidden');
+    showMatrixScreen();
+    initCountdownParticles();
+    generateHeartParticles();
+    audio.currentTime = 0;
+    audio.play().then(() => {
+        updateTurntableState(true);
+    }).catch(err => console.warn(err));
+}
+
+if (btnReplayAll) {
+    btnReplayAll.addEventListener('click', replayEntireExperience);
+}
+
+// Custom cover photo handler
+if (vinylCenterLabel && inputRecordCover) {
+    vinylCenterLabel.addEventListener('click', () => {
+        inputRecordCover.click();
+    });
+
+    inputRecordCover.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                if (vinylImg) vinylImg.src = evt.target.result;
+                localStorage.setItem('matrix_record_cover', evt.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    const savedCover = localStorage.getItem('matrix_record_cover');
+    if (savedCover && vinylImg && savedCover.startsWith('data:image')) {
+        vinylImg.src = savedCover;
+    } else if (vinylImg) {
+        vinylImg.src = 'milk-photo.png';
+    }
+}
+
+// Audio timeupdate listener
+audio.addEventListener('timeupdate', updateRecordProgress);
+
+// ==========================================
+// 9. Experience Controls & UI
 // ==========================================
 function startExperience() {
     isStarted = true;
+    currentView = 'matrix';
+    hasAutoTransitionedToRecord = false;
+    hasShownProceedButton = false;
+    if (heartProceedContainer) heartProceedContainer.classList.add('hidden');
+    if (recordScreen) recordScreen.classList.add('hidden');
     uiControls.classList.remove('hidden');
 
     initCountdownParticles();
     generateHeartParticles();
 
     audio.currentTime = 0;
-    audio.play().catch((err) => {
+    audio.play().then(() => {
+        updateTurntableState(true);
+    }).catch((err) => {
         console.warn('Audio play prevented:', err);
     });
 
@@ -968,7 +1253,7 @@ function scheduleHideControls() {
 }
 
 document.addEventListener('mousemove', () => {
-    if (isStarted && editModal.classList.contains('hidden')) {
+    if (isStarted && editModal.classList.contains('hidden') && currentView === 'matrix') {
         uiControls.classList.remove('hidden');
         scheduleHideControls();
     }
@@ -979,20 +1264,16 @@ playPauseBtn.addEventListener('click', () => {
     if (audio.paused) {
         audio.play();
         playPauseBtn.textContent = '⏸️';
+        updateTurntableState(true);
     } else {
         audio.pause();
         playPauseBtn.textContent = '▶️';
+        updateTurntableState(false);
     }
 });
 
 // Replay
-replayBtn.addEventListener('click', () => {
-    initCountdownParticles();
-    generateHeartParticles();
-    audio.currentTime = 0;
-    audio.play();
-    playPauseBtn.textContent = '⏸️';
-});
+replayBtn.addEventListener('click', replayEntireExperience);
 
 // Lock Screen Again (if button exists)
 if (lockAgainBtn) {
@@ -1008,10 +1289,22 @@ fullscreenBtn.addEventListener('click', () => {
     }
 });
 
+// Update duration display when metadata loads
+audio.addEventListener('loadedmetadata', () => {
+    if (recordDurTime && audio.duration) {
+        recordDurTime.textContent = formatRecordTime(audio.duration);
+    }
+});
+
 // Audio Loop
 audio.addEventListener('ended', () => {
     audio.currentTime = 0;
     audio.play();
+    updateTurntableState(true);
+    if (currentView === 'matrix') {
+        hasAutoTransitionedToRecord = true;
+        showRecordScreen();
+    }
 });
 
 // ==========================================
@@ -1069,7 +1362,7 @@ resetDefaultsBtn.addEventListener('click', () => {
     inputWord2.value = 'Are';
     inputWord3.value = 'My';
     inputWord4.value = 'Love';
-    selectSong.value = 'audio.m4a';
+    selectSong.value = 'audio.mp3';
 });
 }
 
