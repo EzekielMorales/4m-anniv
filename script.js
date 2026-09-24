@@ -109,7 +109,6 @@ const recordDurTime = document.getElementById('record-dur-time');
 const btnBackMatrix = document.getElementById('btn-back-matrix');
 const btnReplayAll = document.getElementById('btn-replay-all');
 const vinylCenterLabel = document.getElementById('vinyl-center-label');
-const inputRecordCover = document.getElementById('input-record-cover');
 const vinylImg = document.getElementById('vinyl-img');
 
 // Modal Elements
@@ -1071,8 +1070,7 @@ if (turntablePlayBtn) {
 
 // Clicking the vinyl disc toggles play/pause
 if (vinylDisc) {
-    vinylDisc.addEventListener('click', (e) => {
-        if (e.target.closest('#vinyl-center-label')) return;
+    vinylDisc.addEventListener('click', () => {
         playKeyClickSound();
         if (audio.paused) {
             audio.play();
@@ -1190,30 +1188,9 @@ if (btnReplayAll) {
     btnReplayAll.addEventListener('click', replayEntireExperience);
 }
 
-// Custom cover photo handler
-if (vinylCenterLabel && inputRecordCover) {
-    vinylCenterLabel.addEventListener('click', () => {
-        inputRecordCover.click();
-    });
-
-    inputRecordCover.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                if (vinylImg) vinylImg.src = evt.target.result;
-                localStorage.setItem('matrix_record_cover', evt.target.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    const savedCover = localStorage.getItem('matrix_record_cover');
-    if (savedCover && vinylImg && savedCover.startsWith('data:image')) {
-        vinylImg.src = savedCover;
-    } else if (vinylImg) {
-        vinylImg.src = 'milk-photo.png';
-    }
+// Vinyl Center Photo (Milk's photo)
+if (vinylImg) {
+    vinylImg.src = 'milk-photo.png';
 }
 
 // Audio timeupdate listener

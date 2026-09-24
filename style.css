@@ -798,12 +798,6 @@ canvas {
     justify-content: center;
     background: #180820;
     z-index: 2;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-.vinyl-center-label:hover {
-    transform: scale(1.04);
 }
 
 .vinyl-center-img {
@@ -933,6 +927,10 @@ canvas {
 .turntable-play-btn svg {
     color: #ff69b4;
     filter: drop-shadow(0 0 6px rgba(255, 20, 147, 0.8));
+}
+
+.turntable-play-btn svg.hidden {
+    display: none !important;
 }
 
 /* Bottom Player Controls & Info */
