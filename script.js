@@ -233,6 +233,9 @@ function verifyPin() {
 function unlockExperience() {
     lockScreen.classList.add('unlocked');
     startExperience();
+    setTimeout(() => {
+        lockScreen.style.display = 'none';
+    }, 850);
 }
 
 function lockExperienceAgain() {
@@ -243,7 +246,10 @@ function lockExperienceAgain() {
     isUnlocking = false;
     updatePinIndicators();
     lockIconBox.classList.remove('open');
-    lockScreen.classList.remove('unlocked');
+    lockScreen.style.display = 'flex';
+    setTimeout(() => {
+        lockScreen.classList.remove('unlocked');
+    }, 20);
     uiControls.classList.add('hidden');
     fgCtx.clearRect(0, 0, width, height);
 }
@@ -335,6 +341,22 @@ function updateAndDrawMatrixRain() {
 
     matrixCtx.font = `bold ${FONT_SIZE}px 'Fira Code', 'Courier New', monospace`;
 
+    // 1. Bulk draw trailing characters without shadowBlur (ultra fast!)
+    matrixCtx.shadowBlur = 0;
+    matrixCtx.fillStyle = '#ff69b4';
+    for (let i = 0; i < columns; i++) {
+        const y = drops[i] * FONT_SIZE;
+        if (y > FONT_SIZE) {
+            const prevChar = MATRIX_CHARS.charAt((i * 7 + Math.floor(drops[i])) % MATRIX_CHARS.length);
+            matrixCtx.fillText(prevChar, i * FONT_SIZE, y - FONT_SIZE);
+        }
+    }
+
+    // 2. Draw head characters with glow in a single shadowBlur pass
+    matrixCtx.shadowBlur = 8;
+    matrixCtx.shadowColor = '#ff2d75';
+    matrixCtx.fillStyle = '#ffffff';
+
     for (let i = 0; i < columns; i++) {
         const x = i * FONT_SIZE;
         const y = drops[i] * FONT_SIZE;
@@ -342,31 +364,69 @@ function updateAndDrawMatrixRain() {
         if (Math.random() < 0.06) {
             columnChars[i] = MATRIX_CHARS.charAt(Math.floor(Math.random() * MATRIX_CHARS.length));
         }
-        const char = columnChars[i];
+        matrixCtx.fillText(columnChars[i], x, y);
 
-        // Draw bright white/hot-pink head character
-        matrixCtx.shadowBlur = 10;
-        matrixCtx.shadowColor = '#ff2d75';
-        matrixCtx.fillStyle = '#ffffff';
-        matrixCtx.fillText(char, x, y);
-
-        // Draw trailing character
-        if (y > FONT_SIZE) {
-            matrixCtx.shadowBlur = 6;
-            matrixCtx.shadowColor = '#ff1493';
-            matrixCtx.fillStyle = '#ff69b4';
-            const prevChar = MATRIX_CHARS.charAt((i * 7 + Math.floor(drops[i])) % MATRIX_CHARS.length);
-            matrixCtx.fillText(prevChar, x, y - FONT_SIZE);
-        }
-
-        matrixCtx.shadowBlur = 0;
         drops[i] += dropSpeeds[i];
-
         if (drops[i] * FONT_SIZE > height && Math.random() > 0.975) {
             drops[i] = 0;
             dropSpeeds[i] = 0.75 + Math.random() * 1.5;
         }
     }
+    matrixCtx.shadowBlur = 0;
+}
+
+// ==========================================
+// Performance-Optimized Glow Texture Engine
+// Pre-renders radial glow textures to eliminate expensive CPU/GPU shadowBlur in tight loops
+// ==========================================
+const glowSpriteCache = new Map();
+
+function getGlowSprite(color, coreColor = '#ffffff') {
+    const key = `${color}_${coreColor}`;
+    if (glowSpriteCache.has(key)) return glowSpriteCache.get(key);
+
+    const size = 32;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const half = size / 2;
+
+    const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+    grad.addColorStop(0, coreColor);
+    grad.addColorStop(0.28, color);
+    grad.addColorStop(0.68, color + '66');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    glowSpriteCache.set(key, canvas);
+    return canvas;
+}
+
+let ledDotSprite = null;
+function getLedDotSprite() {
+    if (ledDotSprite) return ledDotSprite;
+    const size = 36;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const half = size / 2;
+
+    const grad = ctx.createRadialGradient(half, half, 0, half, half, half);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.32, '#ffffff');
+    grad.addColorStop(0.50, '#ff2d75');
+    grad.addColorStop(0.80, 'rgba(255, 20, 147, 0.45)');
+    grad.addColorStop(1, 'rgba(255, 20, 147, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    ledDotSprite = canvas;
+    return ledDotSprite;
 }
 
 // ==========================================
@@ -492,12 +552,13 @@ function regenerateGlyphCaches() {
 // ==========================================
 // 3. Countdown Particle Cloud System (3, 2, 1)
 // ==========================================
-const COUNTDOWN_PARTICLE_COUNT = 900;
 let countdownParticles = [];
 
 function initCountdownParticles() {
+    const isMobile = width < 600;
+    const count = isMobile ? 420 : 850;
     countdownParticles = [];
-    for (let i = 0; i < COUNTDOWN_PARTICLE_COUNT; i++) {
+    for (let i = 0; i < count; i++) {
         countdownParticles.push({
             x: width / 2 + (Math.random() - 0.5) * 50,
             y: height / 2 + (Math.random() - 0.5) * 50,
@@ -550,21 +611,19 @@ function updateCountdownParticles(targetGlyph, progress, isDissolving = false) {
 }
 
 function drawCountdownParticles() {
+    const spritePink = getGlowSprite('#ff69b4', '#fff5f8');
+    const spriteWhite = getGlowSprite('#ffffff', '#ffffff');
+
     for (let i = 0; i < countdownParticles.length; i++) {
         const p = countdownParticles[i];
         if (p.alpha <= 0.01) continue;
 
-        fgCtx.save();
         fgCtx.globalAlpha = p.alpha;
-        fgCtx.shadowBlur = 12;
-        fgCtx.shadowColor = '#ff69b4';
-        fgCtx.fillStyle = p.color;
-
-        fgCtx.beginPath();
-        fgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        fgCtx.fill();
-        fgCtx.restore();
+        const sprite = p.color === '#fff5f8' ? spriteWhite : spritePink;
+        const d = p.size * 3.0;
+        fgCtx.drawImage(sprite, p.x - d / 2, p.y - d / 2, d, d);
     }
+    fgCtx.globalAlpha = 1.0;
 }
 
 // ==========================================
@@ -639,27 +698,12 @@ function drawDotMatrixWord(targetKey, timeInPhase, duration) {
         });
     }
 
-    // 3. CRISP HIGH-DENSITY LED GLOWING DOTS:
+    // 3. CRISP HIGH-DENSITY LED GLOWING DOTS (Hardware Accelerated Texture Blitting):
+    const dotSpr = getLedDotSprite();
     for (let i = 0; i < points.length; i++) {
         const pt = points[i];
-        const r = pt.r || 3.2;
-
-        // Glowing outer neon halo
-        fgCtx.shadowBlur = 12;
-        fgCtx.shadowColor = '#ff1493';
-        fgCtx.fillStyle = '#ffffff';
-
-        fgCtx.beginPath();
-        fgCtx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
-        fgCtx.fill();
-
-        // Extra white-hot core
-        fgCtx.shadowBlur = 2;
-        fgCtx.shadowColor = '#ffffff';
-        fgCtx.fillStyle = '#ffffff';
-        fgCtx.beginPath();
-        fgCtx.arc(pt.x, pt.y, r * 0.45, 0, Math.PI * 2);
-        fgCtx.fill();
+        const d = (pt.r || 3.2) * 2.6;
+        fgCtx.drawImage(dotSpr, pt.x - d / 2, pt.y - d / 2, d, d);
     }
 
     fgCtx.restore();
@@ -668,7 +712,6 @@ function drawDotMatrixWord(targetKey, timeInPhase, duration) {
 // ==========================================
 // 5. Big Fluffy Particle Heart & Text for Milk
 // ==========================================
-const HEART_PARTICLE_COUNT = 1650;
 let heartParticles = [];
 let floatingSparks = [];
 
@@ -682,10 +725,11 @@ function generateHeartParticles() {
     heartParticles = [];
     const isMobile = width < 600;
     const baseScale = isMobile ? (width / 38) : (Math.min(width, height) / 36);
+    const count = isMobile ? 750 : 1500;
 
     const colors = ['#ff007f', '#ff1493', '#ff69b4', '#ff85c0', '#ffffff', '#ffa3d1'];
 
-    for (let i = 0; i < HEART_PARTICLE_COUNT; i++) {
+    for (let i = 0; i < count; i++) {
         const t = Math.random() * Math.PI * 2;
         const pt = getHeartCoord(t, baseScale);
 
@@ -699,20 +743,23 @@ function generateHeartParticles() {
 
         const spread = (Math.random() + Math.random() + Math.random() - 1.5) * (isMobile ? 26 : 38);
         const tangentSpread = (Math.random() - 0.5) * 8;
+        const color = colors[Math.floor(Math.random() * colors.length)];
 
         heartParticles.push({
             baseX: pt.x + nx * spread + tx * tangentSpread,
             baseY: pt.y + ny * spread + ty * tangentSpread,
-            size: 1.8 + Math.random() * 3.5,
-            color: colors[Math.floor(Math.random() * colors.length)],
+            size: (isMobile ? 2.2 : 2.5) + Math.random() * 3.5,
+            color: color,
+            sprite: getGlowSprite(color, color === '#ffffff' ? '#ffffff' : '#fff0f5'),
             alpha: 0.35 + Math.random() * 0.65,
             phase: Math.random() * Math.PI * 2,
             speed: 1.2 + Math.random() * 1.8
         });
     }
 
+    const sparkCount = isMobile ? 45 : 90;
     floatingSparks = [];
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < sparkCount; i++) {
         resetFloatingSpark(i);
     }
 }
@@ -722,6 +769,7 @@ function resetFloatingSpark(index) {
     const baseScale = isMobile ? (width / 38) : (Math.min(width, height) / 36);
     const t = Math.random() * Math.PI * 2;
     const pt = getHeartCoord(t, baseScale);
+    const color = Math.random() > 0.5 ? '#ff69b4' : '#ffffff';
 
     floatingSparks[index] = {
         x: width / 2 + pt.x + (Math.random() - 0.5) * 40,
@@ -730,7 +778,8 @@ function resetFloatingSpark(index) {
         vy: -0.8 - Math.random() * 1.8,
         size: 1.5 + Math.random() * 2.5,
         alpha: 0.7 + Math.random() * 0.3,
-        color: Math.random() > 0.5 ? '#ff69b4' : '#ffffff'
+        color: color,
+        sprite: getGlowSprite(color, '#ffffff')
     };
 }
 
@@ -760,16 +809,9 @@ function updateAndDrawHeart(currentTime) {
         const shimmer = Math.sin(time * p.speed + p.phase);
         const currentAlpha = Math.max(0.15, Math.min(1, p.alpha + shimmer * 0.25));
 
-        fgCtx.save();
         fgCtx.globalAlpha = currentAlpha;
-        fgCtx.shadowBlur = 10;
-        fgCtx.shadowColor = p.color;
-        fgCtx.fillStyle = p.color;
-
-        fgCtx.beginPath();
-        fgCtx.arc(p.baseX, p.baseY, p.size, 0, Math.PI * 2);
-        fgCtx.fill();
-        fgCtx.restore();
+        const d = p.size * 2.8;
+        fgCtx.drawImage(p.sprite, p.baseX - d / 2, p.baseY - d / 2, d, d);
     }
 
     fgCtx.restore();
@@ -786,16 +828,11 @@ function updateAndDrawHeart(currentTime) {
             continue;
         }
 
-        fgCtx.save();
         fgCtx.globalAlpha = spark.alpha;
-        fgCtx.shadowBlur = 8;
-        fgCtx.shadowColor = spark.color;
-        fgCtx.fillStyle = spark.color;
-        fgCtx.beginPath();
-        fgCtx.arc(spark.x, spark.y, spark.size, 0, Math.PI * 2);
-        fgCtx.fill();
-        fgCtx.restore();
+        const d = spark.size * 2.8;
+        fgCtx.drawImage(spark.sprite, spark.x - d / 2, spark.y - d / 2, d, d);
     }
+    fgCtx.globalAlpha = 1.0;
 
     // Center Text: "- I Love ❤️ You Milk -"
     fgCtx.save();

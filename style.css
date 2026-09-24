@@ -30,6 +30,9 @@ canvas {
     width: 100%;
     height: 100%;
     display: block;
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 #matrix-canvas {
