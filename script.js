@@ -1,45 +1,58 @@
 /**
- * Matrix Love Code - Interactive Romantic Particle & Matrix Experience
- * Synchronized with the soundtrack from the video.
+ * Matrix Love Code for Milk 💖
+ * Theme: Original Dark Cyber Neon Pink Matrix + Voice Vault Passcode (PIN: 2405)
+ * Soundtrack: Best Part - Daniel Caesar ft. H.E.R.
+ * High-Definition Legibility Engine for LED Dot Matrix Words
  */
+
+// Auto-clean any previous default if it was 'Sayang' or 'Best Part' in word4
+if (!localStorage.getItem('matrix_heart_text') || localStorage.getItem('matrix_heart_text').includes('Sayang')) {
+    localStorage.setItem('matrix_heart_text', 'I Love ❤️ You Milk');
+}
+if (!localStorage.getItem('matrix_word_4') || localStorage.getItem('matrix_word_4') === 'Best Part') {
+    localStorage.setItem('matrix_word_4', 'Love');
+}
+localStorage.setItem('matrix_song', 'audio.m4a');
 
 // ==========================================
 // Configuration & State
 // ==========================================
 const CONFIG = {
-    // Default messages (can be customized via UI or localStorage)
-    heartText: localStorage.getItem('matrix_heart_text') || 'I Love ❤️ You Sayang',
+    correctPin: '2405',
+    currentSong: 'audio.m4a', // Best Part by Daniel Caesar ft. H.E.R.
+
+    // Custom Messages
+    heartText: localStorage.getItem('matrix_heart_text') || 'I Love ❤️ You Milk',
     word1: localStorage.getItem('matrix_word_1') || 'You',
     word2: localStorage.getItem('matrix_word_2') || 'Are',
     word3: localStorage.getItem('matrix_word_3') || 'My',
     word4: localStorage.getItem('matrix_word_4') || 'Love',
 
-    // Timeline event timings in seconds (matched with audio.mp4)
+    // Song Timings synchronized with Best Part
     timings: {
         introStart: 0.0,
-        centerDot1Start: 1.6,
-        centerDot1End: 2.8,
-        count3Start: 2.9,
-        count2Start: 3.9,
-        count1Start: 4.9,
+        centerDot1Start: 1.0,
+        centerDot1End: 2.3,
+        count3Start: 2.4,
+        count2Start: 3.6,
+        count1Start: 4.8,
         countdownEnd: 5.9,
-        centerDot2Start: 6.6,
-        centerDot2End: 7.6,
-        word1Start: 7.7,
-        word1End: 9.5,
-        word2Start: 9.6,
-        word2End: 11.4,
-        word3Start: 11.5,
-        word3End: 13.2,
-        word4Start: 13.3,
-        word4End: 15.6,
-        anticipationStart: 15.6,
-        heartDropStart: 17.6
+        centerDot2Start: 6.0,
+        centerDot2End: 7.1,
+        word1Start: 7.2,    // "I just wanna see..." -> You
+        word1End: 9.6,
+        word2Start: 9.7,    // "How beautiful you are..." -> Are
+        word2End: 12.0,
+        word3Start: 12.1,   // "You know that I see it..." -> My
+        word3End: 14.4,
+        word4Start: 14.5,   // "I know you're a star... Where you go I'll follow..." -> Love (or Milk)
+        word4End: 17.5,
+        heartDropStart: 17.6 // "If life is a movie, oh you're the best part... ❤️" -> Heart
     }
 };
 
 // ==========================================
-// Canvas & Context Setup
+// DOM Elements
 // ==========================================
 const matrixCanvas = document.getElementById('matrix-canvas');
 const matrixCtx = matrixCanvas.getContext('2d');
@@ -48,11 +61,20 @@ const fgCanvas = document.getElementById('fg-canvas');
 const fgCtx = fgCanvas.getContext('2d');
 
 const audio = document.getElementById('bgm');
-const startOverlay = document.getElementById('start-overlay');
-const startBtn = document.getElementById('start-btn');
+
+// Lockscreen DOM
+const lockScreen = document.getElementById('lock-screen');
+const lockIconBox = document.getElementById('lock-icon-box');
+const pinIndicators = document.getElementById('pin-indicators');
+const pinSlots = document.querySelectorAll('.pin-slot');
+const keyButtons = document.querySelectorAll('.key-btn');
+const hintBtn = document.getElementById('hint-btn');
+
+// UI Controls
 const uiControls = document.getElementById('ui-controls');
 const playPauseBtn = document.getElementById('play-pause-btn');
 const replayBtn = document.getElementById('replay-btn');
+const lockAgainBtn = document.getElementById('lock-again-btn');
 const editBtn = document.getElementById('edit-btn');
 const fullscreenBtn = document.getElementById('fullscreen-btn');
 
@@ -63,6 +85,7 @@ const inputWord1 = document.getElementById('input-word-1');
 const inputWord2 = document.getElementById('input-word-2');
 const inputWord3 = document.getElementById('input-word-3');
 const inputWord4 = document.getElementById('input-word-4');
+const selectSong = document.getElementById('select-song');
 const saveModalBtn = document.getElementById('save-modal-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const resetDefaultsBtn = document.getElementById('reset-defaults-btn');
@@ -71,7 +94,194 @@ let width = window.innerWidth;
 let height = window.innerHeight;
 let isStarted = false;
 let controlsTimeout = null;
+let currentPin = '';
+let isUnlocking = false;
 
+// Set audio track
+audio.src = CONFIG.currentSong;
+
+// ==========================================
+// Sound Synthesis (Web Audio API)
+// ==========================================
+let audioCtx = null;
+function getAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+function playKeyClickSound() {
+    try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(620, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(840, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.09, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.06);
+    } catch (e) {}
+}
+
+function playErrorSound() {
+    try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(140, ctx.currentTime + 0.22);
+        gain.gain.setValueAtTime(0.14, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.22);
+    } catch (e) {}
+}
+
+function playUnlockChime() {
+    try {
+        const ctx = getAudioContext();
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            const startTime = ctx.currentTime + idx * 0.08;
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(0.12, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.26);
+        });
+    } catch (e) {}
+}
+
+// ==========================================
+// Passcode Lock Screen Logic
+// ==========================================
+function updatePinIndicators() {
+    pinSlots.forEach((slot, idx) => {
+        if (idx < currentPin.length) {
+            slot.classList.add('filled');
+        } else {
+            slot.classList.remove('filled');
+        }
+    });
+}
+
+function handleKeyPress(key) {
+    if (isUnlocking) return;
+
+    if (key === 'del') {
+        if (currentPin.length > 0) {
+            playKeyClickSound();
+            currentPin = currentPin.slice(0, -1);
+            updatePinIndicators();
+        }
+    } else if (/^[0-9]$/.test(key)) {
+        if (currentPin.length < 4) {
+            playKeyClickSound();
+            currentPin += key;
+            updatePinIndicators();
+
+            if (currentPin.length === 4) {
+                verifyPin();
+            }
+        }
+    }
+}
+
+function verifyPin() {
+    if (currentPin === CONFIG.correctPin) {
+        isUnlocking = true;
+        playUnlockChime();
+        lockIconBox.classList.add('open');
+
+        setTimeout(() => {
+            unlockExperience();
+        }, 550);
+    } else {
+        playErrorSound();
+        pinIndicators.classList.add('shake');
+
+        setTimeout(() => {
+            pinIndicators.classList.remove('shake');
+            currentPin = '';
+            updatePinIndicators();
+        }, 500);
+    }
+}
+
+function unlockExperience() {
+    lockScreen.classList.add('unlocked');
+    startExperience();
+}
+
+function lockExperienceAgain() {
+    isStarted = false;
+    audio.pause();
+    audio.currentTime = 0;
+    currentPin = '';
+    isUnlocking = false;
+    updatePinIndicators();
+    lockIconBox.classList.remove('open');
+    lockScreen.classList.remove('unlocked');
+    uiControls.classList.add('hidden');
+    fgCtx.clearRect(0, 0, width, height);
+}
+
+keyButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const key = btn.getAttribute('data-key');
+        handleKeyPress(key);
+    });
+});
+
+hintBtn.addEventListener('click', () => {
+    playKeyClickSound();
+    currentPin = CONFIG.correctPin;
+    updatePinIndicators();
+    setTimeout(() => {
+        verifyPin();
+    }, 200);
+});
+
+window.addEventListener('keydown', (e) => {
+    if (!isStarted && !isUnlocking) {
+        if (e.key >= '0' && e.key <= '9') {
+            handleKeyPress(e.key);
+        } else if (e.key === 'Backspace') {
+            handleKeyPress('del');
+        }
+        return;
+    }
+
+    if (e.code === 'Space') {
+        e.preventDefault();
+        playPauseBtn.click();
+    } else if (e.code === 'KeyF') {
+        fullscreenBtn.click();
+    } else if (e.code === 'KeyR') {
+        replayBtn.click();
+    }
+});
+
+// ==========================================
+// Canvas Setup & Resizing
+// ==========================================
 function resizeCanvases() {
     width = window.innerWidth;
     height = window.innerHeight;
@@ -90,9 +300,9 @@ function resizeCanvases() {
 window.addEventListener('resize', resizeCanvases);
 
 // ==========================================
-// 1. Matrix Digital Rain Layer
+// 1. Pink Cyber Matrix Digital Rain Layer
 // ==========================================
-const MATRIX_CHARS = '01♥❤LOVE0110♥100101YOU10100101♥4MANNI1010123456789ABCDEF♥';
+const MATRIX_CHARS = '01♥❤LOVE0110♥100101MILK10100101♥4MANNI1010123456789ABCDEF♥';
 const FONT_SIZE = 16;
 let columns = 0;
 let drops = [];
@@ -106,14 +316,13 @@ function initMatrixRain() {
     columnChars = [];
 
     for (let i = 0; i < columns; i++) {
-        drops[i] = Math.random() * -100; // staggered start
+        drops[i] = Math.random() * -100;
         dropSpeeds[i] = 0.75 + Math.random() * 1.5;
         columnChars[i] = MATRIX_CHARS.charAt(Math.floor(Math.random() * MATRIX_CHARS.length));
     }
 }
 
 function updateAndDrawMatrixRain() {
-    // Semi-transparent fade background for smooth trails
     matrixCtx.fillStyle = 'rgba(3, 1, 6, 0.14)';
     matrixCtx.fillRect(0, 0, width, height);
 
@@ -123,19 +332,18 @@ function updateAndDrawMatrixRain() {
         const x = i * FONT_SIZE;
         const y = drops[i] * FONT_SIZE;
 
-        // Randomly mutate character
         if (Math.random() < 0.06) {
             columnChars[i] = MATRIX_CHARS.charAt(Math.floor(Math.random() * MATRIX_CHARS.length));
         }
         const char = columnChars[i];
 
-        // Draw bright head character
+        // Draw bright white/hot-pink head character
         matrixCtx.shadowBlur = 10;
         matrixCtx.shadowColor = '#ff2d75';
         matrixCtx.fillStyle = '#ffffff';
         matrixCtx.fillText(char, x, y);
 
-        // Draw trailing character just above head
+        // Draw trailing character
         if (y > FONT_SIZE) {
             matrixCtx.shadowBlur = 6;
             matrixCtx.shadowColor = '#ff1493';
@@ -144,13 +352,9 @@ function updateAndDrawMatrixRain() {
             matrixCtx.fillText(prevChar, x, y - FONT_SIZE);
         }
 
-        // Reset shadow
         matrixCtx.shadowBlur = 0;
-
-        // Advance drop
         drops[i] += dropSpeeds[i];
 
-        // Reset column if out of view
         if (drops[i] * FONT_SIZE > height && Math.random() > 0.975) {
             drops[i] = 0;
             dropSpeeds[i] = 0.75 + Math.random() * 1.5;
@@ -159,75 +363,114 @@ function updateAndDrawMatrixRain() {
 }
 
 // ==========================================
-// 2. Offscreen Sampler for Countdown & Words
+// 2. High-Definition Sampler for Countdown & Words
 // ==========================================
-// Offscreen canvas to render text and extract pixel positions
 const offCanvas = document.createElement('canvas');
 const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
 
 let glyphPoints = {
-    '3': [],
-    '2': [],
-    '1': [],
-    'word1': [],
-    'word2': [],
-    'word3': [],
-    'word4': []
+    '3': null,
+    '2': null,
+    '1': null,
+    'word1': null,
+    'word2': null,
+    'word3': null,
+    'word4': null
 };
 
-function sampleTextPoints(text, fontSize, isDotMatrix = false) {
-    const size = 600;
-    offCanvas.width = size;
-    offCanvas.height = size;
-    offCtx.clearRect(0, 0, size, size);
+function sampleTextPoints(text, isDotMatrix = false) {
+    const isMobile = width < 600;
+    const baseCanvasSize = 800;
+    offCanvas.width = baseCanvasSize;
+    offCanvas.height = baseCanvasSize;
+    offCtx.clearRect(0, 0, baseCanvasSize, baseCanvasSize);
 
     offCtx.fillStyle = '#ffffff';
     offCtx.textAlign = 'center';
     offCtx.textBaseline = 'middle';
-    
-    if (isDotMatrix) {
-        // Bold impactful font for LED matrix
-        offCtx.font = `900 ${fontSize}px 'Montserrat', 'Arial Black', sans-serif`;
-    } else {
-        // Fluffy countdown font
-        offCtx.font = `900 ${fontSize}px 'Montserrat', sans-serif`;
-    }
-    
-    offCtx.fillText(text, size / 2, size / 2);
 
-    const imgData = offCtx.getImageData(0, 0, size, size).data;
     const points = [];
-    const step = isDotMatrix ? 12 : 6; // Grid step for dot matrix vs particle cloud
+    const lines = text.trim().split(/\s+/);
 
-    for (let y = 0; y < size; y += step) {
-        for (let x = 0; x < size; x += step) {
-            const index = (y * size + x) * 4;
-            const alpha = imgData[index + 3];
-            if (alpha > 128) {
-                // Normalized coordinates relative to center (-0.5 to 0.5)
-                points.push({
-                    x: (x - size / 2),
-                    y: (y - size / 2)
-                });
+    if (!isDotMatrix) {
+        // Countdown (3, 2, 1)
+        const countdownSize = isMobile ? 240 : 300;
+        offCtx.font = `900 ${countdownSize}px 'Montserrat', sans-serif`;
+        offCtx.fillText(text, baseCanvasSize / 2, baseCanvasSize / 2);
+
+        const imgData = offCtx.getImageData(0, 0, baseCanvasSize, baseCanvasSize).data;
+        const step = 6;
+        for (let y = 0; y < baseCanvasSize; y += step) {
+            for (let x = 0; x < baseCanvasSize; x += step) {
+                const idx = (y * baseCanvasSize + x) * 4;
+                if (imgData[idx + 3] > 128) {
+                    points.push({
+                        x: x - baseCanvasSize / 2,
+                        y: y - baseCanvasSize / 2
+                    });
+                }
             }
         }
+        return { points, text, lines: [text], fontSize: countdownSize, lineSpacing: 0 };
+    } else {
+        // High-Density LED Matrix Words (Crystal Clear & 100% Legible)
+        let fontSize;
+        let lineSpacing = 0;
+
+        if (lines.length > 1) {
+            // If multi-word (e.g. "Best Part"), render on stacked lines
+            fontSize = isMobile ? 75 : 105;
+            lineSpacing = fontSize * 1.05;
+        } else {
+            // Single punchy word (e.g. "You", "Are", "My", "Love", "Milk")
+            if (text.length <= 4) {
+                fontSize = isMobile ? 120 : 160;
+            } else {
+                fontSize = isMobile ? 85 : 125;
+            }
+        }
+
+        offCtx.font = `900 ${fontSize}px 'Montserrat', 'Arial Black', sans-serif`;
+
+        if (lines.length === 1) {
+            offCtx.fillText(text, baseCanvasSize / 2, baseCanvasSize / 2);
+        } else {
+            const startY = baseCanvasSize / 2 - ((lines.length - 1) * lineSpacing) / 2;
+            lines.forEach((line, i) => {
+                offCtx.fillText(line, baseCanvasSize / 2, startY + i * lineSpacing);
+            });
+        }
+
+        const imgData = offCtx.getImageData(0, 0, baseCanvasSize, baseCanvasSize).data;
+        // High density sampling step: 6px on mobile, 7px on desktop for solid, unbroken strokes
+        const step = isMobile ? 6 : 7;
+        const dotRadius = step * 0.46;
+
+        for (let y = 0; y < baseCanvasSize; y += step) {
+            for (let x = 0; x < baseCanvasSize; x += step) {
+                const idx = (y * baseCanvasSize + x) * 4;
+                if (imgData[idx + 3] > 90) {
+                    points.push({
+                        x: x - baseCanvasSize / 2,
+                        y: y - baseCanvasSize / 2,
+                        r: dotRadius
+                    });
+                }
+            }
+        }
+        return { points, text, lines, fontSize, lineSpacing };
     }
-    return points;
 }
 
 function regenerateGlyphCaches() {
-    const isMobile = width < 600;
-    const countdownSize = isMobile ? 220 : 280;
-    const wordSize = isMobile ? 100 : 140;
+    glyphPoints['3'] = sampleTextPoints('3', false);
+    glyphPoints['2'] = sampleTextPoints('2', false);
+    glyphPoints['1'] = sampleTextPoints('1', false);
 
-    glyphPoints['3'] = sampleTextPoints('3', countdownSize, false);
-    glyphPoints['2'] = sampleTextPoints('2', countdownSize, false);
-    glyphPoints['1'] = sampleTextPoints('1', countdownSize, false);
-
-    glyphPoints['word1'] = sampleTextPoints(CONFIG.word1, wordSize, true);
-    glyphPoints['word2'] = sampleTextPoints(CONFIG.word2, wordSize, true);
-    glyphPoints['word3'] = sampleTextPoints(CONFIG.word3, wordSize, true);
-    glyphPoints['word4'] = sampleTextPoints(CONFIG.word4, wordSize, true);
+    glyphPoints['word1'] = sampleTextPoints(CONFIG.word1, true);
+    glyphPoints['word2'] = sampleTextPoints(CONFIG.word2, true);
+    glyphPoints['word3'] = sampleTextPoints(CONFIG.word3, true);
+    glyphPoints['word4'] = sampleTextPoints(CONFIG.word4, true);
 }
 
 // ==========================================
@@ -255,7 +498,8 @@ function initCountdownParticles() {
 }
 
 function updateCountdownParticles(targetGlyph, progress, isDissolving = false) {
-    const points = glyphPoints[targetGlyph] || [];
+    const data = glyphPoints[targetGlyph];
+    const points = data ? data.points : [];
     const centerX = width / 2;
     const centerY = height / 2;
 
@@ -263,7 +507,6 @@ function updateCountdownParticles(targetGlyph, progress, isDissolving = false) {
         const p = countdownParticles[i];
 
         if (isDissolving) {
-            // Dissolve explosion effect
             p.x += p.vx;
             p.y += p.vy;
             p.alpha = Math.max(0, p.alpha - 0.035);
@@ -273,19 +516,14 @@ function updateCountdownParticles(targetGlyph, progress, isDissolving = false) {
                 p.targetX = centerX + pt.x;
                 p.targetY = centerY + pt.y;
 
-                // Brownian cloud shimmer
                 const time = performance.now() * 0.003;
                 const jitterX = Math.sin(time + p.seed) * 1.5;
                 const jitterY = Math.cos(time + p.seed * 0.7) * 1.5;
 
-                // Easing towards target position
                 p.x += (p.targetX + jitterX - p.x) * 0.18;
                 p.y += (p.targetY + jitterY - p.y) * 0.18;
-
-                // Smooth fade-in
                 p.alpha = Math.min(0.95, p.alpha + 0.08);
 
-                // Prepare scatter velocity when dissolve begins
                 const angle = Math.atan2(p.y - centerY, p.x - centerX) + (Math.random() - 0.5) * 0.5;
                 const speed = 2 + Math.random() * 6;
                 p.vx = Math.cos(angle) * speed;
@@ -317,52 +555,80 @@ function drawCountdownParticles() {
 // 4. Dot Matrix / LED Words ("You", "Are", "My", "Love")
 // ==========================================
 function drawDotMatrixWord(targetKey, timeInPhase, duration) {
-    const points = glyphPoints[targetKey] || [];
-    if (points.length === 0) return;
+    const data = glyphPoints[targetKey];
+    if (!data || !data.points || data.points.length === 0) return;
 
+    const points = data.points;
     const centerX = width / 2;
     const centerY = height / 2;
 
-    // Pop-in and pulse animation
     let scale = 1.0;
     let alpha = 1.0;
-    if (timeInPhase < 0.2) {
-        // Quick punchy scale pop
-        scale = 0.8 + (timeInPhase / 0.2) * 0.25;
+    if (timeInPhase < 0.22) {
+        scale = 0.85 + (timeInPhase / 0.22) * 0.20;
     } else {
-        scale = 1.0 + Math.sin(timeInPhase * 6) * 0.02;
+        scale = 1.0 + Math.sin(timeInPhase * 4) * 0.02;
     }
 
-    // Fade out near end of word
-    if (timeInPhase > duration - 0.25) {
-        alpha = Math.max(0, (duration - timeInPhase) / 0.25);
+    if (timeInPhase > duration - 0.26) {
+        alpha = Math.max(0, (duration - timeInPhase) / 0.26);
     }
-
-    const dotRadius = width < 600 ? 3.8 : 4.8;
 
     fgCtx.save();
     fgCtx.translate(centerX, centerY);
     fgCtx.scale(scale, scale);
     fgCtx.globalAlpha = alpha;
 
+    // 1. CLEARANCE BACKDROP: Soft dark radial vignette directly behind the text
+    // Stops falling matrix rain columns from cutting through the letters
+    const bgRadius = Math.max(width * 0.35, 300);
+    const bgGrad = fgCtx.createRadialGradient(0, 0, 10, 0, 0, bgRadius);
+    bgGrad.addColorStop(0, 'rgba(3, 1, 6, 0.88)');
+    bgGrad.addColorStop(0.65, 'rgba(3, 1, 6, 0.72)');
+    bgGrad.addColorStop(1, 'rgba(3, 1, 6, 0)');
+    fgCtx.fillStyle = bgGrad;
+    fgCtx.beginPath();
+    fgCtx.arc(0, 0, bgRadius, 0, Math.PI * 2);
+    fgCtx.fill();
+
+    // 2. SUBTLE BACKING TEXT SILHOUETTE:
+    // Ensures letter strokes connect flawlessly and are 100% crystal-clear to read!
+    fgCtx.font = `900 ${data.fontSize}px 'Montserrat', 'Arial Black', sans-serif`;
+    fgCtx.textAlign = 'center';
+    fgCtx.textBaseline = 'middle';
+    fgCtx.fillStyle = 'rgba(255, 20, 147, 0.20)';
+    fgCtx.shadowBlur = 18;
+    fgCtx.shadowColor = 'rgba(255, 20, 147, 0.45)';
+
+    if (data.lines.length === 1) {
+        fgCtx.fillText(data.text, 0, 0);
+    } else {
+        const startY = -((data.lines.length - 1) * data.lineSpacing) / 2;
+        data.lines.forEach((line, i) => {
+            fgCtx.fillText(line, 0, startY + i * data.lineSpacing);
+        });
+    }
+
+    // 3. CRISP HIGH-DENSITY LED GLOWING DOTS:
     for (let i = 0; i < points.length; i++) {
         const pt = points[i];
+        const r = pt.r || 3.2;
 
         // Glowing outer neon halo
-        fgCtx.shadowBlur = 15;
+        fgCtx.shadowBlur = 12;
         fgCtx.shadowColor = '#ff1493';
         fgCtx.fillStyle = '#ffffff';
 
         fgCtx.beginPath();
-        fgCtx.arc(pt.x, pt.y, dotRadius, 0, Math.PI * 2);
+        fgCtx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
         fgCtx.fill();
 
         // Extra white-hot core
-        fgCtx.shadowBlur = 4;
+        fgCtx.shadowBlur = 2;
         fgCtx.shadowColor = '#ffffff';
         fgCtx.fillStyle = '#ffffff';
         fgCtx.beginPath();
-        fgCtx.arc(pt.x, pt.y, dotRadius * 0.5, 0, Math.PI * 2);
+        fgCtx.arc(pt.x, pt.y, r * 0.45, 0, Math.PI * 2);
         fgCtx.fill();
     }
 
@@ -370,15 +636,13 @@ function drawDotMatrixWord(targetKey, timeInPhase, duration) {
 }
 
 // ==========================================
-// 5. Big Fluffy Particle Heart & Text
+// 5. Big Fluffy Particle Heart & Text for Milk
 // ==========================================
-const HEART_PARTICLE_COUNT = 1600;
+const HEART_PARTICLE_COUNT = 1650;
 let heartParticles = [];
 let floatingSparks = [];
 
-// Parametric Heart Equation
 function getHeartCoord(t, scale) {
-    // Standard Cardioid / Heart Curve
     const x = 16 * Math.pow(Math.sin(t), 3);
     const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
     return { x: x * scale, y: y * scale };
@@ -395,7 +659,6 @@ function generateHeartParticles() {
         const t = Math.random() * Math.PI * 2;
         const pt = getHeartCoord(t, baseScale);
 
-        // Calculate normal / tangent for fluffy spread perpendicular to the perimeter
         const dt = 0.01;
         const pt2 = getHeartCoord(t + dt, baseScale);
         const tx = pt2.x - pt.x;
@@ -404,7 +667,6 @@ function generateHeartParticles() {
         const nx = -ty / len;
         const ny = tx / len;
 
-        // Gaussian-like normal distribution for fluffy cloud edges
         const spread = (Math.random() + Math.random() + Math.random() - 1.5) * (isMobile ? 26 : 38);
         const tangentSpread = (Math.random() - 0.5) * 8;
 
@@ -415,11 +677,10 @@ function generateHeartParticles() {
             color: colors[Math.floor(Math.random() * colors.length)],
             alpha: 0.35 + Math.random() * 0.65,
             phase: Math.random() * Math.PI * 2,
-            speed: 1.5 + Math.random() * 2
+            speed: 1.2 + Math.random() * 1.8
         });
     }
 
-    // Floating Sparks
     floatingSparks = [];
     for (let i = 0; i < 90; i++) {
         resetFloatingSpark(i);
@@ -447,21 +708,17 @@ function updateAndDrawHeart(currentTime) {
     const centerX = width / 2;
     const centerY = height / 2;
 
-    // Heartbeat Rhythm calculation (~128 BPM energetic lub-dub beat)
     const timeSinceDrop = Math.max(0, currentTime - CONFIG.timings.heartDropStart);
-    const beatFrequency = 2.13; // Beats per second
+    const beatFrequency = 1.27; // ~76 BPM acoustic beat of Best Part
     const beatPhase = (timeSinceDrop * beatFrequency) % 1;
 
     let beatScale = 1.0;
-    if (beatPhase < 0.15) {
-        // Lub (primary ventricular beat)
-        beatScale += Math.sin((beatPhase / 0.15) * Math.PI) * 0.085;
-    } else if (beatPhase >= 0.18 && beatPhase < 0.32) {
-        // Dub (secondary beat)
-        beatScale += Math.sin(((beatPhase - 0.18) / 0.14) * Math.PI) * 0.045;
+    if (beatPhase < 0.20) {
+        beatScale += Math.sin((beatPhase / 0.20) * Math.PI) * 0.08;
+    } else if (beatPhase >= 0.24 && beatPhase < 0.42) {
+        beatScale += Math.sin(((beatPhase - 0.24) / 0.18) * Math.PI) * 0.045;
     }
 
-    // Draw Heart Particle Cloud
     fgCtx.save();
     fgCtx.translate(centerX, centerY);
     fgCtx.scale(beatScale, beatScale);
@@ -470,8 +727,6 @@ function updateAndDrawHeart(currentTime) {
 
     for (let i = 0; i < heartParticles.length; i++) {
         const p = heartParticles[i];
-
-        // Soft breathing shimmer
         const shimmer = Math.sin(time * p.speed + p.phase);
         const currentAlpha = Math.max(0.15, Math.min(1, p.alpha + shimmer * 0.25));
 
@@ -489,7 +744,7 @@ function updateAndDrawHeart(currentTime) {
 
     fgCtx.restore();
 
-    // Update and Draw Floating Sparks
+    // Floating Sparks
     for (let i = 0; i < floatingSparks.length; i++) {
         const spark = floatingSparks[i];
         spark.x += spark.vx;
@@ -512,7 +767,7 @@ function updateAndDrawHeart(currentTime) {
         fgCtx.restore();
     }
 
-    // Draw Center Text Inside Heart: "- I Love ❤️ You Sayang -"
+    // Center Text: "- I Love ❤️ You Milk -"
     fgCtx.save();
     fgCtx.translate(centerX, centerY);
     fgCtx.scale(beatScale, beatScale);
@@ -568,10 +823,7 @@ function drawCenterDot(progress) {
 function animate() {
     requestAnimationFrame(animate);
 
-    // Update background Matrix Rain
     updateAndDrawMatrixRain();
-
-    // Clear foreground layer
     fgCtx.clearRect(0, 0, width, height);
 
     if (!isStarted) return;
@@ -579,75 +831,61 @@ function animate() {
     const t = audio.currentTime;
     const timings = CONFIG.timings;
 
-    // Timeline Phase Router
     if (t >= timings.introStart && t < timings.centerDot1Start) {
-        // Just pink matrix rain falling smoothly
+        // Pink matrix rain with guitar intro
     }
     else if (t >= timings.centerDot1Start && t < timings.centerDot1End) {
-        // Voice: "udah siap belum? yuk" -> Center glowing dot
         const progress = (t - timings.centerDot1Start) / (timings.centerDot1End - timings.centerDot1Start);
         drawCenterDot(progress);
     }
     else if (t >= timings.count3Start && t < timings.count2Start) {
-        // Countdown "3"
         const progress = (t - timings.count3Start) / (timings.count2Start - timings.count3Start);
         updateCountdownParticles('3', progress);
         drawCountdownParticles();
     }
     else if (t >= timings.count2Start && t < timings.count1Start) {
-        // Countdown "2"
         const progress = (t - timings.count2Start) / (timings.count1Start - timings.count2Start);
         updateCountdownParticles('2', progress);
         drawCountdownParticles();
     }
     else if (t >= timings.count1Start && t < timings.countdownEnd) {
-        // Countdown "1"
         const progress = (t - timings.count1Start) / (timings.countdownEnd - timings.count1Start);
         updateCountdownParticles('1', progress);
         drawCountdownParticles();
     }
     else if (t >= timings.countdownEnd && t < timings.centerDot2Start) {
-        // Countdown dissolving
         updateCountdownParticles('1', 1, true);
         drawCountdownParticles();
     }
     else if (t >= timings.centerDot2Start && t < timings.centerDot2End) {
-        // Pre-beat anticipation dot
         const progress = (t - timings.centerDot2Start) / (timings.centerDot2End - timings.centerDot2Start);
         drawCenterDot(progress);
     }
     else if (t >= timings.word1Start && t < timings.word1End) {
-        // "You"
         drawDotMatrixWord('word1', t - timings.word1Start, timings.word1End - timings.word1Start);
     }
     else if (t >= timings.word2Start && t < timings.word2End) {
-        // "Are"
         drawDotMatrixWord('word2', t - timings.word2Start, timings.word2End - timings.word2Start);
     }
     else if (t >= timings.word3Start && t < timings.word3End) {
-        // "My"
         drawDotMatrixWord('word3', t - timings.word3Start, timings.word3End - timings.word3Start);
     }
     else if (t >= timings.word4Start && t < timings.word4End) {
-        // "Love"
         drawDotMatrixWord('word4', t - timings.word4Start, timings.word4End - timings.word4Start);
     }
-    else if (t >= timings.anticipationStart && t < timings.heartDropStart) {
-        // Voice buildup: "What's that? Hit 'em with a red light..."
-        // Falling matrix rain with gentle anticipation
+    else if (t >= timings.word4End && t < timings.heartDropStart) {
+        // Transition beat
     }
     else if (t >= timings.heartDropStart) {
-        // Beat drop! Fluffy glowing heart & pulsating text
         updateAndDrawHeart(t);
     }
 }
 
 // ==========================================
-// 8. User Interaction & Controls
+// 8. Experience Controls & UI
 // ==========================================
 function startExperience() {
     isStarted = true;
-    startOverlay.classList.add('fade-out');
     uiControls.classList.remove('hidden');
 
     initCountdownParticles();
@@ -676,8 +914,6 @@ document.addEventListener('mousemove', () => {
     }
 });
 
-startBtn.addEventListener('click', startExperience);
-
 // Toggle Play/Pause
 playPauseBtn.addEventListener('click', () => {
     if (audio.paused) {
@@ -698,6 +934,9 @@ replayBtn.addEventListener('click', () => {
     playPauseBtn.textContent = '⏸️';
 });
 
+// Lock Screen Again
+lockAgainBtn.addEventListener('click', lockExperienceAgain);
+
 // Fullscreen
 fullscreenBtn.addEventListener('click', () => {
     if (!document.fullscreenElement) {
@@ -707,21 +946,8 @@ fullscreenBtn.addEventListener('click', () => {
     }
 });
 
-// Keyboard shortcuts
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        e.preventDefault();
-        playPauseBtn.click();
-    } else if (e.code === 'KeyF') {
-        fullscreenBtn.click();
-    } else if (e.code === 'KeyR') {
-        replayBtn.click();
-    }
-});
-
-// Audio Loop / End Handler
+// Audio Loop
 audio.addEventListener('ended', () => {
-    // Loop playback seamlessly
     audio.currentTime = 0;
     audio.play();
 });
@@ -735,6 +961,7 @@ editBtn.addEventListener('click', () => {
     inputWord2.value = CONFIG.word2;
     inputWord3.value = CONFIG.word3;
     inputWord4.value = CONFIG.word4;
+    selectSong.value = CONFIG.currentSong;
 
     editModal.classList.remove('hidden');
 });
@@ -745,11 +972,22 @@ closeModalBtn.addEventListener('click', () => {
 });
 
 saveModalBtn.addEventListener('click', () => {
-    CONFIG.heartText = inputHeartText.value.trim() || 'I Love ❤️ You Sayang';
+    CONFIG.heartText = inputHeartText.value.trim() || 'I Love ❤️ You Milk';
     CONFIG.word1 = inputWord1.value.trim() || 'You';
     CONFIG.word2 = inputWord2.value.trim() || 'Are';
     CONFIG.word3 = inputWord3.value.trim() || 'My';
     CONFIG.word4 = inputWord4.value.trim() || 'Love';
+    
+    const newSong = selectSong.value;
+    if (newSong !== CONFIG.currentSong) {
+        CONFIG.currentSong = newSong;
+        localStorage.setItem('matrix_song', newSong);
+        audio.src = newSong;
+        if (isStarted) {
+            audio.currentTime = 0;
+            audio.play();
+        }
+    }
 
     localStorage.setItem('matrix_heart_text', CONFIG.heartText);
     localStorage.setItem('matrix_word_1', CONFIG.word1);
@@ -763,11 +1001,12 @@ saveModalBtn.addEventListener('click', () => {
 });
 
 resetDefaultsBtn.addEventListener('click', () => {
-    inputHeartText.value = 'I Love ❤️ You Sayang';
+    inputHeartText.value = 'I Love ❤️ You Milk';
     inputWord1.value = 'You';
     inputWord2.value = 'Are';
     inputWord3.value = 'My';
     inputWord4.value = 'Love';
+    selectSong.value = 'audio.m4a';
 });
 
 // ==========================================

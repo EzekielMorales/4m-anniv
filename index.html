@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Matrix Love Code 💖</title>
+    <title>Matrix Love Code for Milk 💖</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Montserrat:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app">
@@ -17,24 +17,92 @@
         <!-- Foreground Particles, LED Text & Heart Layer -->
         <canvas id="fg-canvas"></canvas>
 
-        <!-- Audio element playing the exact music from the video -->
-        <audio id="bgm" src="audio.mp4" preload="auto" playsinline></audio>
+        <!-- Audio element playing Best Part (Daniel Caesar ft. H.E.R.) -->
+        <audio id="bgm" src="audio.m4a" preload="auto" playsinline></audio>
 
-        <!-- Start Screen Overlay (ensures audio plays smoothly with user gesture) -->
-        <div id="start-overlay" class="overlay">
-            <div class="card-glow">
-                <div class="heart-icon-pulse">💖</div>
-                <h1 class="glow-title">Matrix Love Code</h1>
-                <p class="subtitle">A special romantic surprise for you</p>
-                <button id="start-btn" class="btn-glow">
-                    <span>Click to Begin ✨</span>
-                </button>
-                <div class="hint">🔊 Please turn on your sound for best experience</div>
+        <!-- Passcode Lock Screen (Voice Vault Style) -->
+        <div id="lock-screen" class="lock-screen">
+            <!-- Decorative Floating Sparkles -->
+            <div class="decor-sparkle ds-1">✦</div>
+            <div class="decor-sparkle ds-2">✦</div>
+            <div class="decor-sparkle ds-3">✦</div>
+            <div class="decor-sparkle ds-4">✦</div>
+            <div class="decor-sparkle ds-5">✦</div>
+
+            <div class="lock-card">
+                <!-- Cute Padlock Icon with Heart Cutout -->
+                <div class="lock-icon-box" id="lock-icon-box">
+                    <svg class="lock-svg" viewBox="0 0 100 110" width="82" height="92">
+                        <!-- Shackle -->
+                        <path id="lock-shackle" class="lock-shackle" d="M30 46 V 26 A 20 20 0 0 1 70 26 V 46" fill="none" stroke="#ff2d75" stroke-width="11" stroke-linecap="round" />
+                        <!-- Body -->
+                        <rect class="lock-body" x="16" y="44" width="68" height="56" rx="20" fill="url(#lockGrad)" />
+                        <!-- Heart Cutout -->
+                        <path class="lock-heart" d="M50 80 C50 80, 34 68, 34 59 C34 53, 39 49, 45 49 C48 49, 50 51.5, 50 51.5 C50 51.5, 52 49, 55 49 C61 49, 66 53, 66 59 C66 68, 50 80, 50 80 Z" fill="#ffffff" />
+                        <defs>
+                            <linearGradient id="lockGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#ff2d75" />
+                                <stop offset="100%" stop-color="#b50053" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+
+                <h1 class="lock-title">Someone left a voice note for you</h1>
+                <p class="lock-subtitle">Masukin 4 angka rahasianya dulu ya</p>
+
+                <!-- Hint Pill -->
+                <div class="hint-container">
+                    <button id="hint-btn" class="hint-pill" title="คลิกเพื่อดูคำใบ้">
+                        <span class="hint-icon">✦</span>
+                        <span id="hint-text">Hint: 2405</span>
+                    </button>
+                </div>
+
+                <!-- PIN Heart Indicators -->
+                <div class="pin-indicators" id="pin-indicators">
+                    <div class="pin-slot" data-index="0"></div>
+                    <div class="pin-slot" data-index="1"></div>
+                    <div class="pin-slot" data-index="2"></div>
+                    <div class="pin-slot" data-index="3"></div>
+                </div>
+
+                <div class="accent-star">✦</div>
+
+                <!-- Numeric Keypad -->
+                <div class="keypad">
+                    <button class="key-btn" data-key="1">1</button>
+                    <button class="key-btn" data-key="2">2</button>
+                    <button class="key-btn" data-key="3">3</button>
+
+                    <button class="key-btn" data-key="4">4</button>
+                    <button class="key-btn" data-key="5">5</button>
+                    <button class="key-btn" data-key="6">6</button>
+
+                    <button class="key-btn" data-key="7">7</button>
+                    <button class="key-btn" data-key="8">8</button>
+                    <button class="key-btn" data-key="9">9</button>
+
+                    <div class="key-empty"></div>
+                    <button class="key-btn" data-key="0">0</button>
+                    <button class="key-btn key-delete" id="key-delete" data-key="del" aria-label="ลบ">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+                            <line x1="18" y1="9" x2="12" y2="15"></line>
+                            <line x1="12" y1="9" x2="18" y2="15"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="lock-brand">
+                    <span>byonepercent.com</span>
+                </div>
             </div>
         </div>
 
         <!-- Floating Quick Controls (Auto-hides) -->
         <div id="ui-controls" class="ui-controls hidden">
+            <button id="lock-again-btn" class="control-btn" title="Lock Screen">🔒</button>
             <button id="play-pause-btn" class="control-btn" title="Play / Pause">⏸️</button>
             <button id="replay-btn" class="control-btn" title="Replay from start">🔄</button>
             <button id="edit-btn" class="control-btn" title="Customize Message">✏️</button>
@@ -49,7 +117,7 @@
                 
                 <div class="form-group">
                     <label for="input-heart-text">Heart Text:</label>
-                    <input type="text" id="input-heart-text" value="I Love ❤️ You Sayang" placeholder="e.g. I Love ❤️ You Sayang">
+                    <input type="text" id="input-heart-text" value="I Love ❤️ You Milk" placeholder="e.g. I Love ❤️ You Milk">
                 </div>
 
                 <div class="form-group">
@@ -60,6 +128,14 @@
                         <input type="text" id="input-word-3" value="My" placeholder="Word 3">
                         <input type="text" id="input-word-4" value="Love" placeholder="Word 4">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="select-song">Music Track:</label>
+                    <select id="select-song" class="form-select">
+                        <option value="audio.m4a" selected>Best Part - Daniel Caesar ft. H.E.R.</option>
+                        <option value="audio.mp4">Original TikTok Video Track (Jalan-jalan...)</option>
+                    </select>
                 </div>
 
                 <div class="modal-actions">
