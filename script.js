@@ -5,14 +5,14 @@
  * High-Definition Legibility Engine for LED Dot Matrix Words
  */
 
-// Auto-clean any previous default if it was 'Sayang' or 'Best Part' in word4
+// Auto-clean any previous default if it was 'Sayang' or 'Best Part'
 if (!localStorage.getItem('matrix_heart_text') || localStorage.getItem('matrix_heart_text').includes('Sayang')) {
     localStorage.setItem('matrix_heart_text', 'I Love ❤️ You Milk');
 }
-if (!localStorage.getItem('matrix_word_4') || localStorage.getItem('matrix_word_4') === 'Best Part') {
-    localStorage.setItem('matrix_word_4', 'Love');
-}
 localStorage.setItem('matrix_song', 'audio.m4a');
+
+// Default sequence of words requested by user
+const DEFAULT_WORDS = ['Happy', 'Anniversary', '4 Month', 'You', 'Are', 'My', 'Love'];
 
 // ==========================================
 // Configuration & State
@@ -23,10 +23,7 @@ const CONFIG = {
 
     // Custom Messages
     heartText: localStorage.getItem('matrix_heart_text') || 'I Love ❤️ You Milk',
-    word1: localStorage.getItem('matrix_word_1') || 'You',
-    word2: localStorage.getItem('matrix_word_2') || 'Are',
-    word3: localStorage.getItem('matrix_word_3') || 'My',
-    word4: localStorage.getItem('matrix_word_4') || 'Love',
+    words: DEFAULT_WORDS,
 
     // Song Timings synchronized with Best Part
     timings: {
@@ -37,19 +34,28 @@ const CONFIG = {
         count2Start: 3.6,
         count1Start: 4.8,
         countdownEnd: 5.9,
-        centerDot2Start: 6.0,
-        centerDot2End: 7.1,
-        word1Start: 7.2,    // "I just wanna see..." -> You
-        word1End: 9.6,
-        word2Start: 9.7,    // "How beautiful you are..." -> Are
-        word2End: 12.0,
-        word3Start: 12.1,   // "You know that I see it..." -> My
-        word3End: 14.4,
-        word4Start: 14.5,   // "I know you're a star... Where you go I'll follow..." -> Love (or Milk)
-        word4End: 17.5,
+        wordsStart: 6.0,
+        wordsEnd: 17.55,
         heartDropStart: 17.6 // "If life is a movie, oh you're the best part... ❤️" -> Heart
     }
 };
+
+let wordTimeSlots = [];
+function computeWordTimeSlots() {
+    const totalWords = CONFIG.words.length;
+    const startTime = CONFIG.timings.wordsStart;
+    const endTime = CONFIG.timings.wordsEnd;
+    const durationPerWord = (endTime - startTime) / totalWords;
+
+    wordTimeSlots = CONFIG.words.map((word, idx) => ({
+        index: idx,
+        key: 'word_' + idx,
+        text: word,
+        start: startTime + idx * durationPerWord,
+        end: startTime + (idx + 1) * durationPerWord,
+        duration: durationPerWord
+    }));
+}
 
 // ==========================================
 // DOM Elements
@@ -293,6 +299,7 @@ function resizeCanvases() {
     fgCanvas.height = height;
 
     initMatrixRain();
+    computeWordTimeSlots();
     regenerateGlyphCaches();
     generateHeartParticles();
 }
@@ -371,11 +378,7 @@ const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
 let glyphPoints = {
     '3': null,
     '2': null,
-    '1': null,
-    'word1': null,
-    'word2': null,
-    'word3': null,
-    'word4': null
+    '1': null
 };
 
 function sampleTextPoints(text, isDotMatrix = false) {
@@ -390,7 +393,6 @@ function sampleTextPoints(text, isDotMatrix = false) {
     offCtx.textBaseline = 'middle';
 
     const points = [];
-    const lines = text.trim().split(/\s+/);
 
     if (!isDotMatrix) {
         // Countdown (3, 2, 1)
@@ -416,13 +418,13 @@ function sampleTextPoints(text, isDotMatrix = false) {
         // High-Density LED Matrix Words (Crystal Clear & 100% Legible)
         let fontSize;
         let lineSpacing = 0;
+        const lines = text.includes('\n') ? text.split('\n') : [text];
 
         if (lines.length > 1) {
-            // If multi-word (e.g. "Best Part"), render on stacked lines
             fontSize = isMobile ? 75 : 105;
             lineSpacing = fontSize * 1.05;
         } else {
-            // Single punchy word (e.g. "You", "Are", "My", "Love", "Milk")
+            // Single punchy word / phrase (e.g. "Happy", "Anniversary", "4 Month", "You", "Are", "My", "Love")
             if (text.length <= 4) {
                 fontSize = isMobile ? 120 : 160;
             } else {
@@ -432,8 +434,21 @@ function sampleTextPoints(text, isDotMatrix = false) {
 
         offCtx.font = `900 ${fontSize}px 'Montserrat', 'Arial Black', sans-serif`;
 
+        // Safeguard: Ensure the longest line never exceeds the canvas width
+        const maxTextWidth = baseCanvasSize * 0.82;
+        while (fontSize > 36) {
+            let maxLineW = 0;
+            for (const line of lines) {
+                const w = offCtx.measureText(line).width;
+                if (w > maxLineW) maxLineW = w;
+            }
+            if (maxLineW <= maxTextWidth) break;
+            fontSize -= 3;
+            offCtx.font = `900 ${fontSize}px 'Montserrat', 'Arial Black', sans-serif`;
+        }
+
         if (lines.length === 1) {
-            offCtx.fillText(text, baseCanvasSize / 2, baseCanvasSize / 2);
+            offCtx.fillText(lines[0], baseCanvasSize / 2, baseCanvasSize / 2);
         } else {
             const startY = baseCanvasSize / 2 - ((lines.length - 1) * lineSpacing) / 2;
             lines.forEach((line, i) => {
@@ -463,14 +478,15 @@ function sampleTextPoints(text, isDotMatrix = false) {
 }
 
 function regenerateGlyphCaches() {
-    glyphPoints['3'] = sampleTextPoints('3', false);
-    glyphPoints['2'] = sampleTextPoints('2', false);
-    glyphPoints['1'] = sampleTextPoints('1', false);
+    glyphPoints = {
+        '3': sampleTextPoints('3', false),
+        '2': sampleTextPoints('2', false),
+        '1': sampleTextPoints('1', false)
+    };
 
-    glyphPoints['word1'] = sampleTextPoints(CONFIG.word1, true);
-    glyphPoints['word2'] = sampleTextPoints(CONFIG.word2, true);
-    glyphPoints['word3'] = sampleTextPoints(CONFIG.word3, true);
-    glyphPoints['word4'] = sampleTextPoints(CONFIG.word4, true);
+    CONFIG.words.forEach((word, idx) => {
+        glyphPoints['word_' + idx] = sampleTextPoints(word, true);
+    });
 }
 
 // ==========================================
@@ -562,14 +578,28 @@ function drawDotMatrixWord(targetKey, timeInPhase, duration) {
     const centerX = width / 2;
     const centerY = height / 2;
 
-    let scale = 1.0;
+    // Calculate bounding box of sampled points to auto-fit any mobile screen width
+    let minX = 0, maxX = 0;
+    for (let i = 0; i < points.length; i++) {
+        if (points[i].x < minX) minX = points[i].x;
+        if (points[i].x > maxX) maxX = points[i].x;
+    }
+    const glyphWidth = Math.max(1, maxX - minX);
+    const maxAllowedWidth = width * 0.88;
+    const fitScale = glyphWidth > maxAllowedWidth ? maxAllowedWidth / glyphWidth : 1.0;
+
+    let scale = fitScale;
     let alpha = 1.0;
-    if (timeInPhase < 0.22) {
-        scale = 0.85 + (timeInPhase / 0.22) * 0.20;
+
+    // Smooth fade in & subtle punch forward
+    if (timeInPhase < 0.20) {
+        alpha = Math.min(1.0, timeInPhase / 0.20);
+        scale *= 0.88 + (timeInPhase / 0.20) * 0.17;
     } else {
-        scale = 1.0 + Math.sin(timeInPhase * 4) * 0.02;
+        scale *= 1.0 + Math.sin(timeInPhase * 4) * 0.02;
     }
 
+    // Smooth fade out
     if (timeInPhase > duration - 0.26) {
         alpha = Math.max(0, (duration - timeInPhase) / 0.26);
     }
@@ -581,10 +611,10 @@ function drawDotMatrixWord(targetKey, timeInPhase, duration) {
 
     // 1. CLEARANCE BACKDROP: Soft dark radial vignette directly behind the text
     // Stops falling matrix rain columns from cutting through the letters
-    const bgRadius = Math.max(width * 0.35, 300);
+    const bgRadius = Math.max(glyphWidth * 0.65, 220);
     const bgGrad = fgCtx.createRadialGradient(0, 0, 10, 0, 0, bgRadius);
-    bgGrad.addColorStop(0, 'rgba(3, 1, 6, 0.88)');
-    bgGrad.addColorStop(0.65, 'rgba(3, 1, 6, 0.72)');
+    bgGrad.addColorStop(0, 'rgba(3, 1, 6, 0.90)');
+    bgGrad.addColorStop(0.68, 'rgba(3, 1, 6, 0.75)');
     bgGrad.addColorStop(1, 'rgba(3, 1, 6, 0)');
     fgCtx.fillStyle = bgGrad;
     fgCtx.beginPath();
@@ -596,9 +626,9 @@ function drawDotMatrixWord(targetKey, timeInPhase, duration) {
     fgCtx.font = `900 ${data.fontSize}px 'Montserrat', 'Arial Black', sans-serif`;
     fgCtx.textAlign = 'center';
     fgCtx.textBaseline = 'middle';
-    fgCtx.fillStyle = 'rgba(255, 20, 147, 0.20)';
+    fgCtx.fillStyle = 'rgba(255, 20, 147, 0.22)';
     fgCtx.shadowBlur = 18;
-    fgCtx.shadowColor = 'rgba(255, 20, 147, 0.45)';
+    fgCtx.shadowColor = 'rgba(255, 20, 147, 0.50)';
 
     if (data.lines.length === 1) {
         fgCtx.fillText(data.text, 0, 0);
@@ -853,28 +883,21 @@ function animate() {
         updateCountdownParticles('1', progress);
         drawCountdownParticles();
     }
-    else if (t >= timings.countdownEnd && t < timings.centerDot2Start) {
+    else if (t >= timings.countdownEnd && t < timings.wordsStart) {
         updateCountdownParticles('1', 1, true);
         drawCountdownParticles();
     }
-    else if (t >= timings.centerDot2Start && t < timings.centerDot2End) {
-        const progress = (t - timings.centerDot2Start) / (timings.centerDot2End - timings.centerDot2Start);
-        drawCenterDot(progress);
+    else if (t >= timings.wordsStart && t < timings.wordsEnd) {
+        for (let i = 0; i < wordTimeSlots.length; i++) {
+            const slot = wordTimeSlots[i];
+            if (t >= slot.start && t < slot.end) {
+                drawDotMatrixWord('word_' + i, t - slot.start, slot.duration);
+                break;
+            }
+        }
     }
-    else if (t >= timings.word1Start && t < timings.word1End) {
-        drawDotMatrixWord('word1', t - timings.word1Start, timings.word1End - timings.word1Start);
-    }
-    else if (t >= timings.word2Start && t < timings.word2End) {
-        drawDotMatrixWord('word2', t - timings.word2Start, timings.word2End - timings.word2Start);
-    }
-    else if (t >= timings.word3Start && t < timings.word3End) {
-        drawDotMatrixWord('word3', t - timings.word3Start, timings.word3End - timings.word3Start);
-    }
-    else if (t >= timings.word4Start && t < timings.word4End) {
-        drawDotMatrixWord('word4', t - timings.word4Start, timings.word4End - timings.word4Start);
-    }
-    else if (t >= timings.word4End && t < timings.heartDropStart) {
-        // Transition beat
+    else if (t >= timings.wordsEnd && t < timings.heartDropStart) {
+        // Transition beat right before the chorus beat drop
     }
     else if (t >= timings.heartDropStart) {
         updateAndDrawHeart(t);
@@ -934,8 +957,10 @@ replayBtn.addEventListener('click', () => {
     playPauseBtn.textContent = '⏸️';
 });
 
-// Lock Screen Again
-lockAgainBtn.addEventListener('click', lockExperienceAgain);
+// Lock Screen Again (if button exists)
+if (lockAgainBtn) {
+    lockAgainBtn.addEventListener('click', lockExperienceAgain);
+}
 
 // Fullscreen
 fullscreenBtn.addEventListener('click', () => {
@@ -953,9 +978,10 @@ audio.addEventListener('ended', () => {
 });
 
 // ==========================================
-// 9. Customization Modal Logic
+// 9. Customization Modal Logic (Optional)
 // ==========================================
-editBtn.addEventListener('click', () => {
+if (editBtn) {
+    editBtn.addEventListener('click', () => {
     inputHeartText.value = CONFIG.heartText;
     inputWord1.value = CONFIG.word1;
     inputWord2.value = CONFIG.word2;
@@ -1008,6 +1034,7 @@ resetDefaultsBtn.addEventListener('click', () => {
     inputWord4.value = 'Love';
     selectSong.value = 'audio.m4a';
 });
+}
 
 // ==========================================
 // Initialization
