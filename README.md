@@ -1,40 +1,95 @@
-# 💖 Matrix Love Code for Milk (4 Months Anniversary)
+# 💖 4-Month Anniversary Web App for Milk
 
-โปรเจกต์เว็บแอนิเมชัน **Matrix Love Code** ที่ผสมผสานหน้าปลดล็อกรหัสผ่าน **Voice Vault Passcode Lock Screen** เข้ากับแอนิเมชันหลักใน **ธีมเดียวกัน 100% (Dark Cyber Neon Pink)** พร้อมเพลง **"Best Part" (Daniel Caesar ft. H.E.R.)** และตั้งชื่อให้แฟนคือ **"Milk"** แบบพร้อมเปิดเล่นได้ทันที!
+A private, romantic interactive web experience built to celebrate our 4-month anniversary with my girlfriend, **Milk** 🌸. 
 
----
+Built with pure vanilla HTML5, CSS3, and JavaScript — featuring a dark cyber neon pink matrix theme, particle animations, and a retro vinyl record player synchronized to **"Best Part"** by Daniel Caesar ft. H.E.R.
 
-## ✨ ส่วนประกอบที่คุมโทนธีมเดียวกันทั้งหมด:
-
-### 1. 🔒 หน้าเข้ารหัส (Cyber Neon Pink Theme)
-- **โทนสี:** พื้นหลังสีดำสลัวเหลือบม่วงนีออน (`#150520` ➔ `#030006`) กลมกลืนกับโลก Matrix ด้านใน
-- **แม่กุญแจหัวใจเรืองแสง (Neon Heart Padlock):** ตัวกุญแจและหูกุญแจสีชมพูนีออนสว่างวาบ พร้อมหัวใจสีขาวตรงกลาง
-- **ประกายดาว & ตัวหนังสือ:** ตัวอักษรสีขาวสว่าง พร้อมแสงนีออนสีชมพู (Pink Neon Glow)
-- **ปุ่มคำใบ้:** ปุ่มแคปซูลนีออนชมพู `✦ Hint: 2405`
-- **ปุ่มตัวเลข (Keypad):** ปุ่มกลมกระจกรมดำกึ่งโปร่งแสง ขอบนีออนชมพู พร้อมแสงกดสะท้อนเรืองแสง
-- **จุดสถานะรหัสผ่าน (PIN Hearts):** เมื่อกดตัวเลข จะเด้งเป็น **รูปหัวใจสีชมพูนีออนสว่าง 💖** ทีละดวง
-- **รหัสผ่าน:** **`2405`**
+🌐 **Live Demo:** [https://ezekielmorales.github.io/4m-anniv/](https://ezekielmorales.github.io/4m-anniv/)  
+🔑 **Passcode:** `2405` *(or tap the hint button on screen)*
 
 ---
 
-### 2. 💖 หน้าแอนิเมชัน (Dark Cyber Neon Pink Matrix + Best Part)
-- **เพลงหลัก:** **"Best Part" (Daniel Caesar ft. H.E.R.)** เล่นอัตโนมัติตั้งแต่ปลดล็อก
-- **สายฝนโค้ดดิจิทัล:** สีชมพูนีออนตกโปรยปรายต่อเนื่อง (มีคำว่า `MILK`, `LOVE`, `♥`, `4M`)
-- **นับถอยหลัง 3 ➔ 2 ➔ 1:** ละอองอนุภาคสีขาว-ชมพูนุ่มฟุ้ง
-- **ตัวอักษร LED คมชัดสูง (High-Density):**
-  - `"You"`
-  - `"Are"`
-  - `"My"`
-  - `"Love"`
-  - *(มีม่านเงาวงกลมด้านหลังตัวอักษร ทำให้สายฝนโค้ดไม่บังตัวหนังสือ คมชัด อ่านง่าย 100%)*
-- **หัวใจปุยละอองฟุ้ง 1,650+ ดวง:** เต้นตามจังหวะเพลงอคูสติก พร้อมข้อความ:
-  ### **`- I Love ❤️ You Milk -`**
+## ✨ The Experience
+
+1. **🔐 Voice Vault Passcode Screen**
+   - Cyber Neon Pink padlock with a heart cutout and playful key sounds.
+   - Enter `2405` to unlock the surprise.
+
+2. **🌧️ Neon Pink Matrix Rain & Countdown**
+   - The song *"Best Part"* begins playing right from the acoustic guitar intro.
+   - Falling cyber matrix rain with hidden words (`MILK`, `LOVE`, `♥`, `4M`).
+   - Stardust particle countdown: `3` ➔ `2` ➔ `1`.
+
+3. **💡 LED Dot Matrix Lyric Words**
+   - Synchronized with Verse 1 vocals:
+     `Happy` ➔ `Anniversary` ➔ `4 Month` ➔ `You` ➔ `Are` ➔ `My` ➔ `Love`
+   - High-density LED dots with backdrop shadow vignettes for 100% crisp legibility on phones and desktop screens.
+
+4. **💓 Beating Particle Heart**
+   - Over 1,600 fluffy glowing particles pulse to the acoustic rhythm.
+   - Glows with the message: `- I Love ❤️ You Milk -`.
+   - After a few seconds, an interactive floating button invites her to proceed: `[ 💿 ไปฟังแผ่นเสียงต่อกันนะ ➔ ]`.
+
+5. **💿 "Our Record" Vinyl Turntable Player**
+   - Smoothly transitions **without stopping or interrupting the music**.
+   - Realistic spinning vinyl disc with Milk's photo on the center label.
+   - Tonearm needle drops onto the grooves, accompanied by pulsing ambient ripples.
+   - **Interactive scrubber bar:** Tap or drag backwards/forwards anytime to replay your favorite parts of the full 03:29 track.
+   - Replay button & Return to Heart button to relive the animations anytime.
 
 ---
 
-## 🚀 วิธีเปิดใช้งาน (พร้อมเปิดดูได้ทันที)
+## 🚀 Running Locally
 
-เซิร์ฟเวอร์เปิดใช้งานเรียบร้อยแล้ว เข้าชมได้เลยที่:
-👉 **[http://localhost:3000](http://localhost:3000)**
+No complicated setup or heavy frameworks needed. Just clone and run!
 
-*(ใส่รหัส **`2405`** หรือกดปุ่ม Hint ก็จะเข้าสู่หน้าเซอร์ไพรส์ของ Milk ทันทีครับ)* 🔐💖
+### Prerequisites
+- [Node.js](https://nodejs.org/) installed on your machine (v16+ recommended).
+
+### Quick Start
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/ezekielmorales/4m-anniv.git
+   cd 4m-anniv
+   ```
+
+2. **Start the local server:**
+   ```bash
+   npm start
+   ```
+   *(or run `node server.js` directly)*
+
+3. **Open in your browser:**
+   Go to [http://localhost:3000](http://localhost:3000)
+
+> 💡 **Tip:** You can also use any static web server (such as Python's `python -m http.server 3000` or VS Code's Live Server extension). `server.js` is included because it supports HTTP `Range` headers for smooth audio scrubbing.
+
+---
+
+## 🛠️ Tech Stack
+
+- **HTML5 & CSS3:** Responsive layout, glassmorphism UI, `@keyframes` neon glows.
+- **JavaScript (ES6+):** Pure vanilla JS, no external libraries.
+- **HTML5 Canvas API:** Dual-layer hardware-accelerated particle engine (Matrix rain + LED typography + parametric heart).
+- **Web Audio API & HTML5 Audio:** Responsive audio playback and custom touch/mouse drag scrubber.
+- **Node.js:** Lightweight built-in server supporting byte-range audio streaming.
+
+---
+
+## 📁 Project Structure
+
+```text
+4m-anniv/
+├── index.html        # Main HTML structure (Passcode, Canvases, Vinyl Player)
+├── style.css         # Cyber neon styles, animations & responsive layout
+├── script.js         # Particle math, timings, audio sync & turntable logic
+├── server.js         # Lightweight local dev server with audio range streaming
+├── audio.mp3         # "Best Part" - Daniel Caesar ft. H.E.R. (Full 03:29 track)
+├── milk-photo.png    # Milk's photo on the vinyl turntable label
+└── README.md         # Project documentation
+```
+
+---
+
+Made with 💖 for Milk. Happy 4th Month Anniversary!
